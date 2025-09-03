@@ -42,7 +42,7 @@ public class SurfconextClaimMapper extends AbstractClaimMapper {
                 .name("dienst2Url")
                 .label("Dienst2 URL")
                 .type(ProviderConfigProperty.STRING_TYPE)
-                .defaultValue("https://dienst2.wisvch.internal")
+                .defaultValue("http://dienst2.wisvch.internal")
 //                .helpText("Rest schema to call external services")
                 .add()
                 .property()
@@ -56,7 +56,7 @@ public class SurfconextClaimMapper extends AbstractClaimMapper {
                 .name("dienst2Endpoint")
                 .label("Dienst2 endpoint")
                 .type(ProviderConfigProperty.STRING_TYPE)
-                .defaultValue("/ldb/api/v3/people?google_username=joshuag")
+                .defaultValue("/ldb/api/v3/people")
 //                .helpText("Port of the external service")
                 .add()
                 .build();
@@ -105,6 +105,8 @@ public class SurfconextClaimMapper extends AbstractClaimMapper {
 
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+        logger.info("Updating surf brokered user: " + user.getId()  + " user email: " + user.getEmail() + " context email: " + context.getEmail());
+
         String netid = "jgort";
         Dienst2Person person = dienst2Service.getDienst2PersonByNetId(netid, session, mapperModel);
         user.setFirstName(person.getFirstname());

@@ -48,6 +48,7 @@ public class GoogleAccountService {
     }
 
     public List<String> retrieveGoogleGroups(String email) {
+        logger.info("Retrieving groups for email: " + email);
         List<String> googleGroups = new ArrayList<>();
         try {
             if(credentials == null) {

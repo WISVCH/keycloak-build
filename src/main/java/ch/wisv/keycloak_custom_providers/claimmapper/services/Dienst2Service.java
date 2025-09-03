@@ -32,6 +32,7 @@ public class Dienst2Service {
 
     public Dienst2Person getDienst2PersonByNetId(String netId, KeycloakSession session, IdentityProviderMapperModel mapperModel) {
         try {
+            logger.info("Retrieving dienst2 person by netId: " + netId);
             CloseableHttpClient httpClient =  session.getProvider(HttpClientProvider.class).getHttpClient();
 
             String url = mapperModel.getConfig().get("dienst2Url");
@@ -61,6 +62,7 @@ public class Dienst2Service {
 
     public Dienst2Person getDienst2PersonByGoogleUsername(String googleUsername, KeycloakSession session, IdentityProviderMapperModel mapperModel) {
         try {
+            logger.info("Retrieving dienst2 person by google username: " + googleUsername);
             CloseableHttpClient httpClient =  session.getProvider(HttpClientProvider.class).getHttpClient();
 
             String url = mapperModel.getConfig().get("dienst2Url");
