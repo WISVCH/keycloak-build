@@ -60,7 +60,6 @@ public class Dienst2SurfconextClaimMapper extends AbstractClaimMapper {
     private final JsonFactory jsonFactory;
 
     public Dienst2SurfconextClaimMapper() {
-
         this.mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
                 .configure(JsonParser.Feature.INCLUDE_SOURCE_IN_LOCATION, true);
@@ -142,13 +141,15 @@ public class Dienst2SurfconextClaimMapper extends AbstractClaimMapper {
         req.setHeader(HttpHeaders.AUTHORIZATION, "Token " + apiKey);
         logger.info("Request: " + req.getURI().toString());
         try {
-            GoogleCredentials creds = GoogleCredentials.getApplicationDefault();
-            String credential = creds.getAccessToken().getTokenValue();
+//            GoogleCredentials creds = GoogleCredentials.getApplicationDefault();
+//            String credential = creds.getAccessToken().getTokenValue();
+//            logger.info("api cred: " + credential + ", type: " + creds.getAuthenticationType());
 
-            logger.info("api cred: " + credential + ", type: " + creds.getAuthenticationType());
             HttpTransport transport = GoogleNetHttpTransport.newTrustedTransport();
 
-            CloudIdentityRequestInitializer initializer = new CloudIdentityRequestInitializer(credential);
+            String gCloudApiKey = System.getenv("GCLOUD_API_KEY");
+            logger.info(gCloudApiKey);
+            CloudIdentityRequestInitializer initializer = new CloudIdentityRequestInitializer(gCloudApiKey);
             com.google.api.client.json.JsonFactory jsonFactory1 = new GsonFactory();
             CloudIdentity cloudIdentity = new CloudIdentity.Builder(transport, jsonFactory1, transport.createRequestFactory().getInitializer()).setCloudIdentityRequestInitializer(initializer).build();
 
