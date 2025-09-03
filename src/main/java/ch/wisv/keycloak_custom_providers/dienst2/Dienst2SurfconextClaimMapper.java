@@ -152,7 +152,6 @@ public class Dienst2SurfconextClaimMapper extends AbstractClaimMapper {
             CloudIdentityRequestInitializer initializer = new CloudIdentityRequestInitializer();
             com.google.api.client.json.JsonFactory jsonFactory1 = new GsonFactory();
             CloudIdentity cloudIdentity = new CloudIdentity.Builder(transport, jsonFactory1, transport.createRequestFactory().getInitializer()).setCloudIdentityRequestInitializer(initializer).build();
-
             GoogleCredentials creds = GoogleCredentials.getApplicationDefault();
             if(creds != null) {
                 if(creds.getAccessToken() == null) {
@@ -166,7 +165,7 @@ public class Dienst2SurfconextClaimMapper extends AbstractClaimMapper {
                 String parent = "groups/-";
                 SearchTransitiveGroupsResponse response =  cloudIdentity.groups().memberships()
                         .searchTransitiveGroups(parent)
-                        .set("query", "member_key_id == '" + email + "' && 'cloudidentity.googleapis.com/groups.discussion_forum' in labels && parent == 'customers/" + customerId +  "'")
+                        .setQuery("member_key_id == '" + email + "' && 'cloudidentity.googleapis.com/groups.discussion_forum' in labels && parent == 'customers/" + customerId +  "'")
                         .setAccessToken(accessToken)
                         .execute();
                 logger.info(response.toString());
