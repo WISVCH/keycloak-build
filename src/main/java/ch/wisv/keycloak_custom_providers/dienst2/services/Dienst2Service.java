@@ -31,7 +31,9 @@ public class Dienst2Service {
     }
 
     public Dienst2Person getDienst2PersonByNetId(String netId, KeycloakSession session, IdentityProviderMapperModel mapperModel) {
-        try (CloseableHttpClient httpClient =  session.getProvider(HttpClientProvider.class).getHttpClient()) {
+        try {
+            CloseableHttpClient httpClient =  session.getProvider(HttpClientProvider.class).getHttpClient();
+
             String url = mapperModel.getConfig().get("dienst2Url");
             String apiKey = mapperModel.getConfig().get("Dienst2ApiKey");
             String endpoint = mapperModel.getConfig().get("dienst2Endpoint");
