@@ -35,6 +35,7 @@ import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.models.*;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -53,6 +54,7 @@ public class Dienst2SurfconextClaimMapper extends AbstractClaimMapper {
     private static final Set<IdentityProviderSyncMode> IDENTITY_PROVIDER_SYNC_MODES = new HashSet<>(Arrays.asList(IdentityProviderSyncMode.values()));
 
     private static final Logger logger = Logger.getLogger(Dienst2SurfconextClaimMapper.class);
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(Dienst2SurfconextClaimMapper.class);
 
     private final List<ProviderConfigProperty> configMetadata;
 
@@ -147,22 +149,32 @@ public class Dienst2SurfconextClaimMapper extends AbstractClaimMapper {
 
             HttpTransport transport = GoogleNetHttpTransport.newTrustedTransport();
 
-            String gCloudApiKey = System.getenv("GCLOUD_API_KEY");
-            logger.info(gCloudApiKey);
-            CloudIdentityRequestInitializer initializer = new CloudIdentityRequestInitializer(gCloudApiKey);
+            CloudIdentityRequestInitializer initializer = new CloudIdentityRequestInitializer();
             com.google.api.client.json.JsonFactory jsonFactory1 = new GsonFactory();
             CloudIdentity cloudIdentity = new CloudIdentity.Builder(transport, jsonFactory1, transport.createRequestFactory().getInitializer()).setCloudIdentityRequestInitializer(initializer).build();
 
-            String email = "joshuag@ch.tudelft.nl";
-            String customerId = "C03nrg5fp";
-            String parent = "groups/-";
-            SearchTransitiveGroupsResponse response =  cloudIdentity.groups().memberships()
-                    .searchTransitiveGroups(parent)
-                    .set("query", "member_key_id == '" + email + "' && 'cloudidentity.googleapis.com/groups.discussion_forum' in labels && parent == 'customers/" + customerId +  "'")
-                    .execute();
-            logger.info(response.toString());
+            GoogleCredentials creds = GoogleCredentials.getApplicationDefault();
+            if(creds != null) {
+                if(creds.getAccessToken() == null) {
+                    creds.refresh();
+                }
+                String accessToken = creds.getAccessToken().getTokenValue();
+                logger.info("accessToken: " + accessToken);
 
-            response.getMemberships().forEach(member -> {logger.info(member.getGroup());});
+                String email = "joshuag@ch.tudelft.nl";
+                String customerId = "C03nrg5fp";
+                String parent = "groups/-";
+                SearchTransitiveGroupsResponse response =  cloudIdentity.groups().memberships()
+                        .searchTransitiveGroups(parent)
+                        .set("query", "member_key_id == '" + email + "' && 'cloudidentity.googleapis.com/groups.discussion_forum' in labels && parent == 'customers/" + customerId +  "'")
+                        .setAccessToken(accessToken)
+                        .execute();
+                logger.info(response.toString());
+
+                response.getMemberships().forEach(member -> {logger.info(member.getGroup());});
+            }else {
+                logger.info("creds zijn null...");
+            }
 
             CloseableHttpResponse resp = httpClient.execute(req);
             Dienst2PeopleResponse result = mapper.readValue(resp.getEntity().getContent(), Dienst2PeopleResponse.class );
