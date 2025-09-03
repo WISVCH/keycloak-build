@@ -11,6 +11,7 @@ import com.google.api.client.googleapis.apache.v2.GoogleApacheHttpTransport;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.googleapis.services.CommonGoogleClientRequestInitializer;
 import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
@@ -141,12 +142,15 @@ public class Dienst2SurfconextClaimMapper extends AbstractClaimMapper {
         req.setHeader(HttpHeaders.AUTHORIZATION, "Token " + apiKey);
         logger.info("Request: " + req.getURI().toString());
         try {
+            GoogleCredentials creds = GoogleCredentials.getApplicationDefault();
+            String credential = creds.getAccessToken().getTokenValue();
 
-            GoogleCredentials.getApplicationDefault();
+            logger.info("api cred: " + credential + ", type: " + creds.getAuthenticationType());
             HttpTransport transport = GoogleNetHttpTransport.newTrustedTransport();
-            com.google.api.client.json.JsonFactory jsonFactory1 = new GsonFactory();
 
-            CloudIdentity cloudIdentity = new CloudIdentity.Builder(transport, jsonFactory1, transport.createRequestFactory().getInitializer()).build();
+            CloudIdentityRequestInitializer initializer = new CloudIdentityRequestInitializer(credential);
+            com.google.api.client.json.JsonFactory jsonFactory1 = new GsonFactory();
+            CloudIdentity cloudIdentity = new CloudIdentity.Builder(transport, jsonFactory1, transport.createRequestFactory().getInitializer()).setCloudIdentityRequestInitializer(initializer).build();
 
             String email = "joshuag@ch.tudelft.nl";
             String customerId = "C03nrg5fp";
