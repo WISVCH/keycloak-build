@@ -106,7 +106,7 @@ public class SurfconextClaimMapper extends AbstractClaimMapper {
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         logger.info("Updating surf brokered user: " + user.getId()  + " user email: " + user.getEmail() + " context email: " + context.getEmail());
-
+        user.getAttributes().forEach((key, value) -> {logger.info("attribute: " + key + " : " + value.toString());});
         String netid = "jgort";
         Dienst2Person person = dienst2Service.getDienst2PersonByNetId(netid, session, mapperModel);
         user.setFirstName(person.getFirstname());
