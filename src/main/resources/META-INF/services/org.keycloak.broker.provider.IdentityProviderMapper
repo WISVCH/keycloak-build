@@ -1,1 +1,2 @@
-ch.wisv.keycloak_custom_providers.dienst2.Dienst2SurfconextClaimMapper
+ch.wisv.keycloak_custom_providers.claimmapper.SurfconextClaimMapper
+ch.wisv.keycloak_custom_providers.claimmapper.GoogleClaimMapper

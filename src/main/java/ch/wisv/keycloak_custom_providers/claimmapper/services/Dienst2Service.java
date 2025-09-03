@@ -1,7 +1,7 @@
-package ch.wisv.keycloak_custom_providers.dienst2.services;
+package ch.wisv.keycloak_custom_providers.claimmapper.services;
 
-import ch.wisv.keycloak_custom_providers.dienst2.models.api.Dienst2PeopleResponse;
-import ch.wisv.keycloak_custom_providers.dienst2.models.api.Dienst2Person;
+import ch.wisv.keycloak_custom_providers.claimmapper.models.api.Dienst2PeopleResponse;
+import ch.wisv.keycloak_custom_providers.claimmapper.models.api.Dienst2Person;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,6 +39,35 @@ public class Dienst2Service {
             String endpoint = mapperModel.getConfig().get("dienst2Endpoint");
             UriBuilder uriBuilder = UriBuilder.fromUri(url + endpoint);
             uriBuilder.queryParam("netid", netId);
+
+            HttpUriRequest req = new HttpGet(uriBuilder.build());
+            req.setHeader(HttpHeaders.AUTHORIZATION, "Token " + apiKey);
+
+            CloseableHttpResponse resp = httpClient.execute(req);
+            Dienst2PeopleResponse result = mapper.readValue(resp.getEntity().getContent(), Dienst2PeopleResponse.class);
+            if (result != null && result.results != null) {
+                logger.info("updateBrokeredUser json object result returned: " + result.results.size() + " results");
+                if (result.results.size() == 1) {
+                    return result.results.getFirst();
+                } else {
+                    logger.error("meer dan 1 persoon, dat is niet best");
+                }
+            }
+        } catch (IOException e) {
+            logger.error("Could not get dienst2 person.", e);
+        }
+        return null;
+    }
+
+    public Dienst2Person getDienst2PersonByGoogleUsername(String googleUsername, KeycloakSession session, IdentityProviderMapperModel mapperModel) {
+        try {
+            CloseableHttpClient httpClient =  session.getProvider(HttpClientProvider.class).getHttpClient();
+
+            String url = mapperModel.getConfig().get("dienst2Url");
+            String apiKey = mapperModel.getConfig().get("Dienst2ApiKey");
+            String endpoint = mapperModel.getConfig().get("dienst2Endpoint");
+            UriBuilder uriBuilder = UriBuilder.fromUri(url + endpoint);
+            uriBuilder.queryParam("google_username", googleUsername);
 
             HttpUriRequest req = new HttpGet(uriBuilder.build());
             req.setHeader(HttpHeaders.AUTHORIZATION, "Token " + apiKey);

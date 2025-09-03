@@ -1,6 +1,5 @@
-package ch.wisv.keycloak_custom_providers.dienst2.services;
+package ch.wisv.keycloak_custom_providers.claimmapper.services;
 
-import ch.wisv.keycloak_custom_providers.dienst2.Dienst2SurfconextClaimMapper;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
@@ -14,7 +13,6 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class GoogleAccountService {
 

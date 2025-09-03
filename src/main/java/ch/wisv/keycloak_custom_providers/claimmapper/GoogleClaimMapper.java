@@ -1,30 +1,17 @@
-package ch.wisv.keycloak_custom_providers.dienst2;
+package ch.wisv.keycloak_custom_providers.claimmapper;
 
-import ch.wisv.keycloak_custom_providers.dienst2.models.api.Dienst2PeopleResponse;
-import ch.wisv.keycloak_custom_providers.dienst2.models.api.Dienst2Person;
-import ch.wisv.keycloak_custom_providers.dienst2.services.Dienst2Service;
-import ch.wisv.keycloak_custom_providers.dienst2.services.GoogleAccountService;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.http.HttpHeaders;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.impl.client.CloseableHttpClient;
+import ch.wisv.keycloak_custom_providers.claimmapper.models.api.Dienst2Person;
+import ch.wisv.keycloak_custom_providers.claimmapper.services.Dienst2Service;
+import ch.wisv.keycloak_custom_providers.claimmapper.services.GoogleAccountService;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.broker.oidc.mappers.AbstractClaimMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
-import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.models.*;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -32,21 +19,21 @@ import java.util.Set;
 
 // Kijk naar UserAttributeMapper voor goed voorbeeld
 //UserAttributeMapper
-public class Dienst2SurfconextClaimMapper extends AbstractClaimMapper {
+public class GoogleClaimMapper extends AbstractClaimMapper {
 
-    public static final String PROVIDER_ID = "dienst2-surfconext-claim-mapper";
+    public static final String PROVIDER_ID = "google-claim-mapper";
 
     public static final String[] COMPATIBLE_PROVIDERS = {KeycloakOIDCIdentityProviderFactory.PROVIDER_ID, OIDCIdentityProviderFactory.PROVIDER_ID};
     private static final Set<IdentityProviderSyncMode> IDENTITY_PROVIDER_SYNC_MODES = new HashSet<>(Arrays.asList(IdentityProviderSyncMode.values()));
 
-    private static final Logger logger = Logger.getLogger(Dienst2SurfconextClaimMapper.class);
+    private static final Logger logger = Logger.getLogger(GoogleClaimMapper.class);
 
     private final List<ProviderConfigProperty> configMetadata;
 
     private final Dienst2Service dienst2Service;
     private final GoogleAccountService googleAccountService;
 
-    public Dienst2SurfconextClaimMapper() {
+    public GoogleClaimMapper() {
         dienst2Service = new Dienst2Service();
         googleAccountService = new GoogleAccountService();
 
@@ -102,7 +89,7 @@ public class Dienst2SurfconextClaimMapper extends AbstractClaimMapper {
 
     @Override
     public String getDisplayType() {
-        return "Dienst2 Surf Mapper";
+        return "Google Claim Mapper";
     }
 
     @Override
@@ -118,16 +105,18 @@ public class Dienst2SurfconextClaimMapper extends AbstractClaimMapper {
 
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        String netid = "jgort";
-        Dienst2Person person = dienst2Service.getDienst2PersonByNetId(netid, session, mapperModel);
+        String googleEmail = user.getEmail();
+        List<String> googleGroups = googleAccountService.retrieveGoogleGroups(googleEmail);
+        user.setAttribute("google_groups", googleGroups);
+
+        String googleUsername = googleEmail.split("@")[0];
+        Dienst2Person person = dienst2Service.getDienst2PersonByGoogleUsername(googleUsername, session, mapperModel);
         user.setFirstName(person.getFirstname());
         user.setLastName(person.getSurname());
         user.setSingleAttribute("google_username", person.getGoogle_username());
         user.setSingleAttribute("netid", person.getNetid());
         user.setSingleAttribute("membership_status", String.valueOf(person.getMembership_status()));
 
-        String googleEmail = person.getGoogle_username() + "@ch.tudelft.nl";
-        List<String> googleGroups = googleAccountService.retrieveGoogleGroups(googleEmail);
-        user.setAttribute("google_groups", googleGroups);
+
     }
 }

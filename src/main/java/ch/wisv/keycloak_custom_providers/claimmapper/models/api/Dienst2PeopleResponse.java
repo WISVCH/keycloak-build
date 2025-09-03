@@ -1,4 +1,4 @@
-package ch.wisv.keycloak_custom_providers.dienst2.models.api;
+package ch.wisv.keycloak_custom_providers.claimmapper.models.api;
 
 import java.util.List;
 
