@@ -1,0 +1,82 @@
+package ch.wisv.keycloak_custom_providers.dienst2.services;
+
+import ch.wisv.keycloak_custom_providers.dienst2.Dienst2SurfconextClaimMapper;
+import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
+import com.google.api.services.cloudidentity.v1.CloudIdentity;
+import com.google.api.services.cloudidentity.v1.CloudIdentityRequestInitializer;
+import com.google.api.services.cloudidentity.v1.model.SearchTransitiveGroupsResponse;
+import com.google.auth.oauth2.GoogleCredentials;
+import org.jboss.logging.Logger;
+
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class GoogleAccountService {
+
+    private final String CUSTOMER_ID = "C03nrg5fp";
+    private final String PARENT = "groups/-";
+
+    private static final Logger logger = Logger.getLogger(GoogleAccountService.class);
+
+    private GoogleCredentials credentials;
+    private final CloudIdentity cloudIdentity;
+
+    public GoogleAccountService() {
+        try {
+            HttpTransport transport = GoogleNetHttpTransport.newTrustedTransport();
+
+            CloudIdentityRequestInitializer initializer = new CloudIdentityRequestInitializer();
+            com.google.api.client.json.JsonFactory jsonFactory1 = new GsonFactory();
+            this.cloudIdentity = new CloudIdentity.Builder(transport, jsonFactory1, transport.createRequestFactory().getInitializer()).setCloudIdentityRequestInitializer(initializer).build();
+
+        } catch (IOException | GeneralSecurityException e) {
+            logger.fatal("Could not get initialize google service, google will not work correctly: ", e);
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public void initializeCredentials() {
+    try {
+        credentials = GoogleCredentials.getApplicationDefault();
+    } catch (IOException e) {
+        logger.fatal("Could not get initialize google service, google will not work correctly: ", e);
+        throw new IllegalStateException(e);
+    }
+    }
+
+    public List<String> retrieveGoogleGroups(String email) {
+        List<String> googleGroups = new ArrayList<>();
+        try {
+            if(credentials == null) {
+                initializeCredentials();
+            }
+
+            if (credentials != null) {
+                if (credentials.getAccessToken() == null) {
+                    credentials.refresh();
+                }
+                String accessToken = credentials.getAccessToken().getTokenValue();
+
+                SearchTransitiveGroupsResponse response = cloudIdentity.groups().memberships()
+                        .searchTransitiveGroups(PARENT)
+                        .setQuery("member_key_id == '" + email + "' && 'cloudidentity.googleapis.com/groups.discussion_forum' in labels && parent == 'customers/" + CUSTOMER_ID + "'")
+                        .setAccessToken(accessToken)
+                        .execute();
+                response.getMemberships().forEach(member -> {
+                    googleGroups.add(member.getGroupKey().getId());
+                });
+                logger.info("Found " + response.getMemberships().size() + " groups for email " + email + ", groups: " + String.join(", ", googleGroups));
+            } else {
+                logger.error("creds zijn null, lijst blijft leeg...");
+            }
+        } catch (IOException e) {
+            logger.error("Could not get google groups.", e);
+        }
+        return googleGroups;
+    }
+}
