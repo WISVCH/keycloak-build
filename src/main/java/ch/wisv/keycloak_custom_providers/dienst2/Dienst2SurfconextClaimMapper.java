@@ -7,6 +7,19 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.googleapis.apache.v2.GoogleApacheHttpTransport;
+import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
+import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.http.HttpRequestInitializer;
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
+import com.google.api.services.cloudidentity.v1.CloudIdentity;
+import com.google.api.services.cloudidentity.v1.CloudIdentityRequest;
+import com.google.api.services.cloudidentity.v1.CloudIdentityRequestInitializer;
+import com.google.api.services.cloudidentity.v1.CloudIdentityScopes;
+import com.google.api.services.cloudidentity.v1.model.SearchTransitiveGroupsResponse;
+import com.google.auth.oauth2.GoogleCredentials;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -25,6 +38,7 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.security.GeneralSecurityException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -127,6 +141,24 @@ public class Dienst2SurfconextClaimMapper extends AbstractClaimMapper {
         req.setHeader(HttpHeaders.AUTHORIZATION, "Token " + apiKey);
         logger.info("Request: " + req.getURI().toString());
         try {
+
+            GoogleCredentials.getApplicationDefault();
+            HttpTransport transport = GoogleNetHttpTransport.newTrustedTransport();
+            com.google.api.client.json.JsonFactory jsonFactory1 = new GsonFactory();
+
+            CloudIdentity cloudIdentity = new CloudIdentity.Builder(transport, jsonFactory1, transport.createRequestFactory().getInitializer()).build();
+
+            String email = "joshuag@ch.tudelft.nl";
+            String customerId = "C03nrg5fp";
+            String parent = "groups/-";
+            SearchTransitiveGroupsResponse response =  cloudIdentity.groups().memberships()
+                    .searchTransitiveGroups(parent)
+                    .set("query", "member_key_id == '" + email + "' && 'cloudidentity.googleapis.com/groups.discussion_forum' in labels && parent == 'customers/" + customerId +  "'")
+                    .execute();
+            logger.info(response.toString());
+
+            response.getMemberships().forEach(member -> {logger.info(member.getGroup());});
+
             CloseableHttpResponse resp = httpClient.execute(req);
             Dienst2PeopleResponse result = mapper.readValue(resp.getEntity().getContent(), Dienst2PeopleResponse.class );
             if (result != null && result.results != null) {
@@ -144,6 +176,8 @@ public class Dienst2SurfconextClaimMapper extends AbstractClaimMapper {
 
         } catch (IOException e) {
             logger.error("updateBrokeredUser ging fout: " + e);
+            throw new RuntimeException(e);
+        } catch (GeneralSecurityException e) {
             throw new RuntimeException(e);
         }
 
