@@ -1,5 +1,12 @@
 package ch.wisv.keycloak_custom_providers.dienst2;
 
+import ch.wisv.keycloak_custom_providers.dienst2.models.api.Dienst2PeopleResponse;
+import ch.wisv.keycloak_custom_providers.dienst2.models.api.Dienst2Person;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -18,10 +25,7 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 // Kijk naar UserAttributeMapper voor goed voorbeeld
@@ -37,13 +41,21 @@ public class Dienst2SurfconextClaimMapper extends AbstractClaimMapper {
 
     private final List<ProviderConfigProperty> configMetadata;
 
+    private final ObjectMapper mapper;
+    private final JsonFactory jsonFactory;
+
     public Dienst2SurfconextClaimMapper() {
+
+        this.mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
+                .configure(JsonParser.Feature.INCLUDE_SOURCE_IN_LOCATION, true);
+        this.jsonFactory = mapper.getFactory();
         configMetadata = ProviderConfigurationBuilder.create()
                 .property()
                 .name("dienst2Url")
                 .label("Dienst2 URL")
                 .type(ProviderConfigProperty.STRING_TYPE)
-                .defaultValue("https://dienst2.ch.tudelft.nl")
+                .defaultValue("https://dienst2.wisvch.internal")
 //                .helpText("Rest schema to call external services")
                 .add()
                 .property()
@@ -116,11 +128,25 @@ public class Dienst2SurfconextClaimMapper extends AbstractClaimMapper {
         logger.info("Request: " + req.getURI().toString());
         try {
             CloseableHttpResponse resp = httpClient.execute(req);
-            String result = new BufferedReader(new InputStreamReader(resp.getEntity().getContent())).lines().collect(Collectors.joining("\n"));
-            logger.info("updateBrokeredUser returned " + result);
+            Dienst2PeopleResponse result = mapper.readValue(resp.getEntity().getContent(), Dienst2PeopleResponse.class );
+            if (result != null && result.results != null) {
+                logger.info("updateBrokeredUser json object result returned: " + result.results.size() + " results");
+                if(result.results.size() == 1) {
+                    Dienst2Person person = result.results.getFirst();
+                    user.setFirstName(person.getFirstname());
+                    user.setLastName(person.getSurname());
+                    user.setSingleAttribute("google_username", person.getGoogle_username());
+                    user.setSingleAttribute("netid", person.getNetid());
+                    user.setSingleAttribute("membership_status", String.valueOf(person.getMembership_status()));
+                }
+
+            }
+
         } catch (IOException e) {
             logger.error("updateBrokeredUser ging fout: " + e);
             throw new RuntimeException(e);
         }
+
+
     }
 }
