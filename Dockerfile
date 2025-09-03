@@ -9,6 +9,7 @@ RUN /opt/keycloak/bin/kc.sh build
 
 FROM quay.io/keycloak/keycloak:26.3.3
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
+COPY ./themes /opt/keycloak/themes
 
 # change these values to point to a running postgres instance
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
