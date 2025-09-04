@@ -46,7 +46,7 @@ public class Person extends Entity implements Serializable {
 
     private String netid;
 
-    private MembershipStatus membershipStatus;
+    private int membershipStatus;
 
     private Student student;
 
@@ -98,7 +98,7 @@ public class Person extends Entity implements Serializable {
         this.netid = netid;
     }
 
-    public MembershipStatus getMembershipStatus() {
+    public int getMembershipStatus() {
         return membershipStatus;
     }
 
