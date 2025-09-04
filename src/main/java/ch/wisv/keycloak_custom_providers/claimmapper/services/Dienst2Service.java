@@ -2,6 +2,7 @@ package ch.wisv.keycloak_custom_providers.claimmapper.services;
 
 import ch.wisv.keycloak_custom_providers.claimmapper.models.api.Dienst2PeopleResponse;
 import ch.wisv.keycloak_custom_providers.claimmapper.models.api.Dienst2Person;
+import ch.wisv.keycloak_custom_providers.claimmapper.models.exception.UserNotFoundException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,63 +31,77 @@ public class Dienst2Service {
                 .configure(JsonParser.Feature.INCLUDE_SOURCE_IN_LOCATION, true);
     }
 
-    public Dienst2Person getDienst2PersonByNetId(String netId, KeycloakSession session, IdentityProviderMapperModel mapperModel) {
+    public Dienst2Person getDienst2PersonByNetId(String netId, KeycloakSession session, IdentityProviderMapperModel mapperModel) throws UserNotFoundException {
         try {
             logger.info("Retrieving dienst2 person by netId: " + netId);
-            CloseableHttpClient httpClient =  session.getProvider(HttpClientProvider.class).getHttpClient();
+            CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
 
-            String url = mapperModel.getConfig().get("dienst2Url");
-            String apiKey = mapperModel.getConfig().get("Dienst2ApiKey");
-            String endpoint = mapperModel.getConfig().get("dienst2Endpoint");
-            UriBuilder uriBuilder = UriBuilder.fromUri(url + endpoint);
+            UriBuilder uriBuilder = setupDienstUri(mapperModel);
             uriBuilder.queryParam("netid", netId);
 
-            HttpUriRequest req = new HttpGet(uriBuilder.build());
-            req.setHeader(HttpHeaders.AUTHORIZATION, "Token " + apiKey);
-
-            CloseableHttpResponse resp = httpClient.execute(req);
-            Dienst2PeopleResponse result = mapper.readValue(resp.getEntity().getContent(), Dienst2PeopleResponse.class);
+            Dienst2PeopleResponse result = executePeopleRequest(mapperModel, httpClient, uriBuilder);
             if (result != null && result.results != null) {
                 logger.info("updateBrokeredUser json object result returned: " + result.results.size() + " results");
                 if (result.results.size() == 1) {
                     return result.results.getFirst();
-                } else {
+                } else if (result.results.size() > 1) {
                     logger.error("meer dan 1 persoon, dat is niet best");
+                    throw new UserNotFoundException();
+                } else {
+                    logger.error("No persons found in Dienst2 for netid: " + netId);
+                    throw new UserNotFoundException();
                 }
             }
+            logger.error("Invalid result received from Dienst2 for netid: " + netId);
+            throw new UserNotFoundException();
         } catch (IOException e) {
-            logger.error("Could not get dienst2 person.", e);
+            logger.error("Could not get dienst2 person for netid: " + netId, e);
+            throw new UserNotFoundException();
         }
-        return null;
     }
 
-    public Dienst2Person getDienst2PersonByGoogleUsername(String googleUsername, KeycloakSession session, IdentityProviderMapperModel mapperModel) {
+    public Dienst2Person getDienst2PersonByGoogleUsername(String googleUsername, KeycloakSession session, IdentityProviderMapperModel mapperModel) throws UserNotFoundException {
         try {
             logger.info("Retrieving dienst2 person by google username: " + googleUsername);
-            CloseableHttpClient httpClient =  session.getProvider(HttpClientProvider.class).getHttpClient();
+            CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
 
-            String url = mapperModel.getConfig().get("dienst2Url");
-            String apiKey = mapperModel.getConfig().get("Dienst2ApiKey");
-            String endpoint = mapperModel.getConfig().get("dienst2Endpoint");
-            UriBuilder uriBuilder = UriBuilder.fromUri(url + endpoint);
+            UriBuilder uriBuilder = setupDienstUri(mapperModel);
             uriBuilder.queryParam("google_username", googleUsername);
-
-            HttpUriRequest req = new HttpGet(uriBuilder.build());
-            req.setHeader(HttpHeaders.AUTHORIZATION, "Token " + apiKey);
-
-            CloseableHttpResponse resp = httpClient.execute(req);
-            Dienst2PeopleResponse result = mapper.readValue(resp.getEntity().getContent(), Dienst2PeopleResponse.class);
+            Dienst2PeopleResponse result = executePeopleRequest(mapperModel, httpClient, uriBuilder);
             if (result != null && result.results != null) {
                 logger.info("updateBrokeredUser json object result returned: " + result.results.size() + " results");
                 if (result.results.size() == 1) {
                     return result.results.getFirst();
-                } else {
+                } else if (result.results.size() > 1) {
                     logger.error("meer dan 1 persoon, dat is niet best");
+                    throw new UserNotFoundException();
+                } else {
+                    logger.error("No persons found in Dienst2 for google_username: " + googleUsername);
+                    throw new UserNotFoundException();
                 }
             }
+            logger.error("Invalid result received from Dienst2 for google_username: " + googleUsername);
+            throw new UserNotFoundException();
         } catch (IOException e) {
-            logger.error("Could not get dienst2 person.", e);
+            logger.error("Could not get dienst2 person for google_username: " + googleUsername, e);
+            throw new UserNotFoundException();
         }
-        return null;
+    }
+
+    private Dienst2PeopleResponse executePeopleRequest(IdentityProviderMapperModel mapperModel, CloseableHttpClient httpClient, UriBuilder uriBuilder) throws IOException {
+        HttpUriRequest req = new HttpGet(uriBuilder.build());
+
+        String apiKey = mapperModel.getConfig().get("Dienst2ApiKey");
+        req.setHeader(HttpHeaders.AUTHORIZATION, "Token " + apiKey);
+
+        CloseableHttpResponse resp = httpClient.execute(req);
+        return mapper.readValue(resp.getEntity().getContent(), Dienst2PeopleResponse.class);
+    }
+
+    private UriBuilder setupDienstUri(IdentityProviderMapperModel mapperModel) {
+        String url = mapperModel.getConfig().get("dienst2Url");
+        String endpoint = mapperModel.getConfig().get("dienst2Endpoint");
+        UriBuilder uriBuilder = UriBuilder.fromUri(url + endpoint);
+        return uriBuilder;
     }
 }

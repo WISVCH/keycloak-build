@@ -1,5 +1,6 @@
 package ch.wisv.keycloak_custom_providers.claimmapper.services;
 
+import ch.wisv.keycloak_custom_providers.claimmapper.models.exception.UserNotFoundException;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
@@ -39,19 +40,19 @@ public class GoogleAccountService {
     }
 
     public void initializeCredentials() {
-    try {
-        credentials = GoogleCredentials.getApplicationDefault();
-    } catch (IOException e) {
-        logger.fatal("Could not get initialize google service, google will not work correctly: ", e);
-        throw new IllegalStateException(e);
-    }
+        try {
+            credentials = GoogleCredentials.getApplicationDefault();
+        } catch (IOException e) {
+            logger.fatal("Could not get initialize google service, google will not work correctly: ", e);
+            throw new IllegalStateException(e);
+        }
     }
 
-    public List<String> retrieveGoogleGroups(String email) {
+    public List<String> retrieveGoogleGroups(String email) throws UserNotFoundException {
         logger.info("Retrieving groups for email: " + email);
         List<String> googleGroups = new ArrayList<>();
         try {
-            if(credentials == null) {
+            if (credentials == null) {
                 initializeCredentials();
             }
 
@@ -66,15 +67,18 @@ public class GoogleAccountService {
                         .setQuery("member_key_id == '" + email + "' && 'cloudidentity.googleapis.com/groups.discussion_forum' in labels && parent == 'customers/" + CUSTOMER_ID + "'")
                         .setAccessToken(accessToken)
                         .execute();
+
                 response.getMemberships().forEach(member -> {
                     googleGroups.add(member.getGroupKey().getId());
                 });
                 logger.info("Found " + response.getMemberships().size() + " groups for email " + email + ", groups: " + String.join(", ", googleGroups));
             } else {
                 logger.error("creds zijn null, lijst blijft leeg...");
+                throw new UserNotFoundException();
             }
         } catch (IOException e) {
             logger.error("Could not get google groups.", e);
+            throw new UserNotFoundException();
         }
         return getSlugsFromEmails(googleGroups);
     }

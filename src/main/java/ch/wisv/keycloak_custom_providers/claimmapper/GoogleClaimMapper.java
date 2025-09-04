@@ -1,6 +1,7 @@
 package ch.wisv.keycloak_custom_providers.claimmapper;
 
 import ch.wisv.keycloak_custom_providers.claimmapper.models.api.Dienst2Person;
+import ch.wisv.keycloak_custom_providers.claimmapper.models.exception.UserNotFoundException;
 import ch.wisv.keycloak_custom_providers.claimmapper.services.Dienst2Service;
 import ch.wisv.keycloak_custom_providers.claimmapper.services.GoogleAccountService;
 import org.jboss.logging.Logger;
@@ -105,33 +106,43 @@ public class GoogleClaimMapper extends AbstractClaimMapper {
 
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        logger.info("Updating google brokered user: " + user.getId()  + " user email: " + user.getEmail() + " context email: " + context.getEmail());
+        logger.info("Updating google brokered user: " + user.getId() + " user email: " + user.getEmail() + " context email: " + context.getEmail());
         String googleEmail = user.getEmail();
-        List<String> googleGroups = googleAccountService.retrieveGoogleGroups(googleEmail);
-        user.setAttribute("google_groups", googleGroups);
+        try {
+            List<String> googleGroups = googleAccountService.retrieveGoogleGroups(googleEmail);
+            user.setAttribute("google_groups", googleGroups);
 
-        String googleUsername = googleEmail.split("@")[0];
-        Dienst2Person person = dienst2Service.getDienst2PersonByGoogleUsername(googleUsername, session, mapperModel);
-        user.setFirstName(person.getFirstname());
-        user.setLastName(person.getSurname());
-        user.setSingleAttribute("google_username", person.getGoogle_username());
-        user.setSingleAttribute("netid", person.getNetid());
-        user.setSingleAttribute("membership_status", String.valueOf(person.getMembership_status()));
+            String googleUsername = googleEmail.split("@")[0];
+            Dienst2Person person = dienst2Service.getDienst2PersonByGoogleUsername(googleUsername, session, mapperModel);
+            user.setFirstName(person.getFirstname());
+            user.setLastName(person.getSurname());
+            user.setSingleAttribute("google_username", person.getGoogle_username());
+            user.setSingleAttribute("netid", person.getNetid());
+            user.setSingleAttribute("membership_status", String.valueOf(person.getMembership_status()));
+        } catch (UserNotFoundException e) {
+            logger.warn("Could not find user with email: " + googleEmail);
+            user.setEnabled(false);
+        }
     }
 
     @Override
     public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        logger.info("Importing google brokered user: " + user.getId()  + " user email: " + user.getEmail() + " context email: " + context.getEmail());
+        logger.info("Importing google brokered user: " + user.getId() + " user email: " + user.getEmail() + " context email: " + context.getEmail());
         String googleEmail = user.getEmail();
-        List<String> googleGroups = googleAccountService.retrieveGoogleGroups(googleEmail);
-        user.setAttribute("google_groups", googleGroups);
+        try {
+            List<String> googleGroups = googleAccountService.retrieveGoogleGroups(googleEmail);
+            user.setAttribute("google_groups", googleGroups);
 
-        String googleUsername = googleEmail.split("@")[0];
-        Dienst2Person person = dienst2Service.getDienst2PersonByGoogleUsername(googleUsername, session, mapperModel);
-        user.setFirstName(person.getFirstname());
-        user.setLastName(person.getSurname());
-        user.setSingleAttribute("google_username", person.getGoogle_username());
-        user.setSingleAttribute("netid", person.getNetid());
-        user.setSingleAttribute("membership_status", String.valueOf(person.getMembership_status()));
+            String googleUsername = googleEmail.split("@")[0];
+            Dienst2Person person = dienst2Service.getDienst2PersonByGoogleUsername(googleUsername, session, mapperModel);
+            user.setFirstName(person.getFirstname());
+            user.setLastName(person.getSurname());
+            user.setSingleAttribute("google_username", person.getGoogle_username());
+            user.setSingleAttribute("netid", person.getNetid());
+            user.setSingleAttribute("membership_status", String.valueOf(person.getMembership_status()));
+        } catch (UserNotFoundException e) {
+            logger.warn("Could not find user with email: " + googleEmail);
+            user.setEnabled(false);
+        }
     }
 }

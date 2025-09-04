@@ -1,6 +1,7 @@
 package ch.wisv.keycloak_custom_providers.claimmapper;
 
 import ch.wisv.keycloak_custom_providers.claimmapper.models.api.Dienst2Person;
+import ch.wisv.keycloak_custom_providers.claimmapper.models.exception.UserNotFoundException;
 import ch.wisv.keycloak_custom_providers.claimmapper.services.Dienst2Service;
 import ch.wisv.keycloak_custom_providers.claimmapper.services.GoogleAccountService;
 import org.jboss.logging.Logger;
@@ -105,35 +106,50 @@ public class SurfconextClaimMapper extends AbstractClaimMapper {
 
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        logger.info("Updating surf brokered user: " + user.getId()  + " user email: " + user.getEmail() + " context email: " + context.getEmail());
-        user.getAttributes().forEach((key, value) -> {logger.info("attribute: " + key + " : " + value.toString());});
+        logger.info("Updating surf brokered user: " + user.getId() + " user email: " + user.getEmail() + " context email: " + context.getEmail());
+        user.getAttributes().forEach((key, value) -> {
+            logger.info("attribute: " + key + " : " + value.toString());
+        });
         String netid = "jgort";
-        Dienst2Person person = dienst2Service.getDienst2PersonByNetId(netid, session, mapperModel);
-        user.setFirstName(person.getFirstname());
-        user.setLastName(person.getSurname());
-        user.setSingleAttribute("google_username", person.getGoogle_username());
-        user.setSingleAttribute("netid", person.getNetid());
-        user.setSingleAttribute("membership_status", String.valueOf(person.getMembership_status()));
+        try {
+            Dienst2Person person = dienst2Service.getDienst2PersonByNetId(netid, session, mapperModel);
+            user.setFirstName(person.getFirstname());
+            user.setLastName(person.getSurname());
+            user.setSingleAttribute("google_username", person.getGoogle_username());
+            user.setSingleAttribute("netid", person.getNetid());
+            user.setSingleAttribute("membership_status", String.valueOf(person.getMembership_status()));
 
-        String googleEmail = person.getGoogle_username() + "@ch.tudelft.nl";
-        List<String> googleGroups = googleAccountService.retrieveGoogleGroups(googleEmail);
-        user.setAttribute("google_groups", googleGroups);
+            String googleEmail = person.getGoogle_username() + "@ch.tudelft.nl";
+            List<String> googleGroups = googleAccountService.retrieveGoogleGroups(googleEmail);
+            user.setAttribute("google_groups", googleGroups);
+        } catch (
+                UserNotFoundException e) {
+            logger.warn("Could not find user with netid: " + netid);
+            user.setEnabled(false);
+        }
     }
 
     @Override
     public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        logger.info("Importing surf brokered user: " + user.getId()  + " user email: " + user.getEmail() + " context email: " + context.getEmail());
-        user.getAttributes().forEach((key, value) -> {logger.info("attribute: " + key + " : " + value.toString());});
+        logger.info("Importing surf brokered user: " + user.getId() + " user email: " + user.getEmail() + " context email: " + context.getEmail());
+        user.getAttributes().forEach((key, value) -> {
+            logger.info("attribute: " + key + " : " + value.toString());
+        });
         String netid = "jgort";
-        Dienst2Person person = dienst2Service.getDienst2PersonByNetId(netid, session, mapperModel);
-        user.setFirstName(person.getFirstname());
-        user.setLastName(person.getSurname());
-        user.setSingleAttribute("google_username", person.getGoogle_username());
-        user.setSingleAttribute("netid", person.getNetid());
-        user.setSingleAttribute("membership_status", String.valueOf(person.getMembership_status()));
+        try {
+            Dienst2Person person = dienst2Service.getDienst2PersonByNetId(netid, session, mapperModel);
+            user.setFirstName(person.getFirstname());
+            user.setLastName(person.getSurname());
+            user.setSingleAttribute("google_username", person.getGoogle_username());
+            user.setSingleAttribute("netid", person.getNetid());
+            user.setSingleAttribute("membership_status", String.valueOf(person.getMembership_status()));
 
-        String googleEmail = person.getGoogle_username() + "@ch.tudelft.nl";
-        List<String> googleGroups = googleAccountService.retrieveGoogleGroups(googleEmail);
-        user.setAttribute("google_groups", googleGroups);
+            String googleEmail = person.getGoogle_username() + "@ch.tudelft.nl";
+            List<String> googleGroups = googleAccountService.retrieveGoogleGroups(googleEmail);
+            user.setAttribute("google_groups", googleGroups);
+        } catch (UserNotFoundException e) {
+            logger.warn("Could not find user with netid: " + netid);
+            user.setEnabled(false);
+        }
     }
 }
