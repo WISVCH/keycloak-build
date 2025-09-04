@@ -118,7 +118,7 @@ Documentation:
 - https://console.cloud.google.com/apis/credentials?referrer=search&project=wisvch
 
 Create a new OAuth client in Cloud Console, and save the client ID and secret. Again create a new identity provider like
-above, ensuring that you switch out the mapper with the google claim mapper. Then this IdP should also be ready to go.
+above, ensuring that you switch out the mapper with the google claim mapper. Set the claim scopes to 'openid email profile'. Then this IdP should also be ready to go.
 
 ### Client scopes
 On the Client scopes page, ensure the following scopes are setup:

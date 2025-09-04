@@ -61,7 +61,10 @@ public abstract class ClaimMapper extends AbstractClaimMapper {
 
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        logger.info("Updating surf brokered user: " + user.getId() + " user email: " + user.getEmail() + " context email: " + context.getEmail());
+        logger.info("Updating for " + providerId + ", user user: " + user.getId() + " user email: " + user.getEmail() + " context email: " + context.getEmail());
+        user.getAttributes().forEach((key, value) -> {
+            logger.info("attribute: " + key + " : " + value.toString());
+        });
         try {
             update(session, realm, user, mapperModel, context);
         } catch (UserNotFoundException e) {
@@ -71,7 +74,7 @@ public abstract class ClaimMapper extends AbstractClaimMapper {
 
     @Override
     public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        logger.info("Importing surf brokered user: " + user.getId() + " user email: " + user.getEmail() + " context email: " + context.getEmail());
+        logger.info("Importing for " + providerId + ", user: " + user.getId() + " user email: " + user.getEmail() + " context email: " + context.getEmail());
         user.getAttributes().forEach((key, value) -> {
             logger.info("attribute: " + key + " : " + value.toString());
         });
