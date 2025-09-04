@@ -119,4 +119,21 @@ public class SurfconextClaimMapper extends AbstractClaimMapper {
         List<String> googleGroups = googleAccountService.retrieveGoogleGroups(googleEmail);
         user.setAttribute("google_groups", googleGroups);
     }
+
+    @Override
+    public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+        logger.info("Importing surf brokered user: " + user.getId()  + " user email: " + user.getEmail() + " context email: " + context.getEmail());
+        user.getAttributes().forEach((key, value) -> {logger.info("attribute: " + key + " : " + value.toString());});
+        String netid = "jgort";
+        Dienst2Person person = dienst2Service.getDienst2PersonByNetId(netid, session, mapperModel);
+        user.setFirstName(person.getFirstname());
+        user.setLastName(person.getSurname());
+        user.setSingleAttribute("google_username", person.getGoogle_username());
+        user.setSingleAttribute("netid", person.getNetid());
+        user.setSingleAttribute("membership_status", String.valueOf(person.getMembership_status()));
+
+        String googleEmail = person.getGoogle_username() + "@ch.tudelft.nl";
+        List<String> googleGroups = googleAccountService.retrieveGoogleGroups(googleEmail);
+        user.setAttribute("google_groups", googleGroups);
+    }
 }
