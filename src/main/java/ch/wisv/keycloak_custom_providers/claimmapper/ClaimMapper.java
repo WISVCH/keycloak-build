@@ -89,6 +89,7 @@ public abstract class ClaimMapper extends AbstractClaimMapper {
 
     protected static void setUserAttributes(UserModel user, Person person, List<String> googleGroups) {
         user.setUsername(SUBJECT_PREFIX + person.getId());
+        user.setSingleAttribute("sub", SUBJECT_PREFIX + person.getId());
         user.setFirstName(person.getFirstname());
         user.setLastName(person.getSurnameWithPreposition());
         user.setEmail(person.getEmail());
