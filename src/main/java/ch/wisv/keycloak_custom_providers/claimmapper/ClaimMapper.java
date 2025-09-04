@@ -30,6 +30,8 @@ public abstract class ClaimMapper extends AbstractClaimMapper {
 
     private final String providerId;
 
+    public static final String SUBJECT_PREFIX = "WISVCH.";
+
     public ClaimMapper(String providerId) {
         this.providerId = providerId;
         configMetadata = ProviderConfigurationBuilder.create()
@@ -91,7 +93,7 @@ public abstract class ClaimMapper extends AbstractClaimMapper {
         user.setSingleAttribute("membership_status", String.valueOf(person.getMembershipStatus()));
 
         //Claims to set got from https://github.com/WISVCH/connect/blob/master/src/main/java/ch/wisv/connect/services/CHScopeClaimTranslationService.java
-        user.setSingleAttribute("sub", String.valueOf(person.getId()));
+        user.setSingleAttribute("sub", SUBJECT_PREFIX + person.getId());
 
         user.setSingleAttribute("name", person.getFormattedName());
         user.setSingleAttribute("preferred_username", !person.getGoogleUsername().isBlank() ? person.getGoogleUsername() : person.getNetid());
