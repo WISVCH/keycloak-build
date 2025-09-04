@@ -1,6 +1,7 @@
 package ch.wisv.keycloak_custom_providers.claimmapper;
 
 import ch.wisv.keycloak_custom_providers.claimmapper.models.api.Person;
+import ch.wisv.keycloak_custom_providers.claimmapper.models.api.Student;
 import ch.wisv.keycloak_custom_providers.claimmapper.models.exception.UserNotFoundException;
 import ch.wisv.keycloak_custom_providers.claimmapper.services.Dienst2Service;
 import ch.wisv.keycloak_custom_providers.claimmapper.services.GoogleAccountService;
@@ -135,59 +136,11 @@ public class GoogleClaimMapper extends AbstractClaimMapper {
 
             String googleUsername = googleEmail.split("@")[0];
             Person person = dienst2Service.getDienst2PersonByGoogleUsername(googleUsername, session, mapperModel);
-            user.setFirstName(person.getFirstname());
-            user.setLastName(person.getSurname());
-            user.setSingleAttribute("google_username", person.getGoogleUsername());
-            user.setSingleAttribute("netid", person.getNetid());
-            user.setSingleAttribute("membership_status", String.valueOf(person.getMembershipStatus()));
+
+            ClaimMapperHelper.setUserAttributes(user, person, googleGroups);
         } catch (UserNotFoundException e) {
             logger.warn("Could not find user with email: " + googleEmail);
             user.setEnabled(false);
         }
     }
-
-//    private void setUserAttributes(UserModel user, Person person, List<String> googleGroups) {
-//        //Claims to set got from https://github.com/WISVCH/connect/blob/master/src/main/java/ch/wisv/connect/services/CHScopeClaimTranslationService.java
-//
-//        user.setSingleAttribute("", person.);
-//
-//        user.setSingleAttribute("name", person.getFormattedName());
-//        user.setSingleAttribute("preferred_username", !person.getGoogle_username().isBlank() ? person.getGoogle_username() : person.getNetid());
-//        user.setSingleAttribute("given_name", person.getFirstname());
-//        user.setSingleAttribute("family_name", person.getSurname()); //TODO WITH PREPOSITION
-////        user.setSingleAttribute("middle_name", person.);
-////        user.setSingleAttribute("nickname", person.);
-////        user.setSingleAttribute("profile", person.);
-////        user.setSingleAttribute("picture", person.);
-////        user.setSingleAttribute("website", person.);
-//
-//        //Not very woke
-////        switch (person.getGender()) {
-////            case "M":
-////                user.setSingleAttribute("gender", "male");
-////                break;
-////            case "F":
-////                user.setSingleAttribute("gender", "female");
-////                break;
-////        }
-////        user.setSingleAttribute("zone_info", person.);
-////        user.setSingleAttribute("locale", person.);
-////        user.setSingleAttribute("updated_at", person.);
-//        user.setSingleAttribute("birthdate", person.);
-//
-//        user.setSingleAttribute("email", person.getEmail());
-////        user.setSingleAttribute("email_verified", person.);
-//
-//        user.setSingleAttribute("phone_number", person.getPhoneMobile());
-////        user.setSingleAttribute("phone_number_verified", person.);
-//
-////        user.setSingleAttribute("address", person.);
-//
-//        user.setSingleAttribute("google_username", person.getGoogle_username());
-//        user.setAttribute("google_groups", googleGroups);
-//
-//        user.setSingleAttribute("netid", person.getNetid());
-//        user.setSingleAttribute("student_number", person.getStudentNumber());
-//        user.setSingleAttribute("study", person.getStudy());
-//    }
 }

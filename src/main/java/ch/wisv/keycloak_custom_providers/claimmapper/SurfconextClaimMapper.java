@@ -138,15 +138,10 @@ public class SurfconextClaimMapper extends AbstractClaimMapper {
         String netid = "jgort";
         try {
             Person person = dienst2Service.getDienst2PersonByNetId(netid, session, mapperModel);
-            user.setFirstName(person.getFirstname());
-            user.setLastName(person.getSurname());
-            user.setSingleAttribute("google_username", person.getGoogleUsername());
-            user.setSingleAttribute("netid", person.getNetid());
-            user.setSingleAttribute("membership_status", String.valueOf(person.getMembershipStatus().getValue()));
-
             String googleEmail = person.getGoogleUsername() + "@ch.tudelft.nl";
             List<String> googleGroups = googleAccountService.retrieveGoogleGroups(googleEmail);
-            user.setAttribute("google_groups", googleGroups);
+
+            ClaimMapperHelper.setUserAttributes(user, person, googleGroups);
         } catch (UserNotFoundException e) {
             logger.warn("Could not find user with netid: " + netid);
             user.setEnabled(false);
