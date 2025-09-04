@@ -60,6 +60,7 @@ public class GoogleAccountService {
                 if (credentials.getAccessToken() == null) {
                     credentials.refresh();
                 }
+                credentials.refreshIfExpired();
                 String accessToken = credentials.getAccessToken().getTokenValue();
 
                 SearchTransitiveGroupsResponse response = cloudIdentity.groups().memberships()
