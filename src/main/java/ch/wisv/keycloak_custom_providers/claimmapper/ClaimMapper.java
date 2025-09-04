@@ -88,12 +88,14 @@ public abstract class ClaimMapper extends AbstractClaimMapper {
     }
 
     protected static void setUserAttributes(UserModel user, Person person, List<String> googleGroups) {
+        user.setUsername(SUBJECT_PREFIX + person.getId());
         user.setFirstName(person.getFirstname());
         user.setLastName(person.getSurnameWithPreposition());
+        user.setEmail(person.getEmail());
+
         user.setSingleAttribute("membership_status", String.valueOf(person.getMembershipStatus()));
 
         //Claims to set got from https://github.com/WISVCH/connect/blob/master/src/main/java/ch/wisv/connect/services/CHScopeClaimTranslationService.java
-        user.setSingleAttribute("sub", SUBJECT_PREFIX + person.getId());
 
         user.setSingleAttribute("name", person.getFormattedName());
         user.setSingleAttribute("preferred_username", !person.getGoogleUsername().isBlank() ? person.getGoogleUsername() : person.getNetid());
@@ -120,7 +122,6 @@ public abstract class ClaimMapper extends AbstractClaimMapper {
 
 //        user.setSingleAttribute("birthdate", person.getBirthdate().toString()); //TODO see Person for disabling info
 
-        user.setSingleAttribute("email", person.getEmail());
 //        user.setSingleAttribute("email_verified", person.);
 
         user.setSingleAttribute("phone_number", person.getPhoneMobile());
