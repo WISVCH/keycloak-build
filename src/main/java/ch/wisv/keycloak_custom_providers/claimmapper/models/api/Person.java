@@ -15,6 +15,11 @@ package ch.wisv.keycloak_custom_providers.claimmapper.models.api;/*
  */
 
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.Optional;
@@ -22,6 +27,7 @@ import java.util.Optional;
 /**
  * Person model
  */
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class Person extends Entity implements Serializable {
     private String formattedName;
     private String titles;
