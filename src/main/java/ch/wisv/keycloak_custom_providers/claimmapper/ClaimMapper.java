@@ -91,7 +91,7 @@ public abstract class ClaimMapper extends AbstractClaimMapper {
         user.setSingleAttribute("membership_status", String.valueOf(person.getMembershipStatus()));
 
         //Claims to set got from https://github.com/WISVCH/connect/blob/master/src/main/java/ch/wisv/connect/services/CHScopeClaimTranslationService.java
-//        user.setSingleAttribute("", person.);
+        user.setSingleAttribute("sub", String.valueOf(person.getId()));
 
         user.setSingleAttribute("name", person.getFormattedName());
         user.setSingleAttribute("preferred_username", !person.getGoogleUsername().isBlank() ? person.getGoogleUsername() : person.getNetid());
