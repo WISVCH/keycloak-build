@@ -38,7 +38,49 @@ study
 ```
 
 ## Scopes to claims/attributes
+openid:
+- sub
 
+profile:
+- name
+- preferred_username
+- given_name
+- familty_name
+- middle_name
+- nickname
+- profile
+- picture
+- website
+- gender
+- zone_info
+- locale
+- updated_at
+- birthdate
+
+email:
+- email
+- email_verified
+
+phone:
+- phone_number
+- phone_number_verified
+
+address:
+- address.formatted
+- address.street_address
+- address.locality
+- address.region
+- address.postal_code
+- address.country
+
+auth:
+- google_username
+- google_groups
+
+student:
+- netid
+- student_number
+- study
 
 ## Resources
 
