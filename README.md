@@ -13,6 +13,33 @@ Select NetID/Google -> Mappers).
 To ensure users are correct, an additional conditional flow should be added to the identity provider which checks
 membership status (gotten from Dienst) and student status (gotten from SURFconext only).
 
+## Attributes to add to Keycloak
+```
+not_found
+membership_status
+name
+preferred_name
+given_name
+family_name
+gender
+birthdate
+email
+phone_number
+address.street_address
+address.postal_code
+address.locality
+address.country
+address.formatted
+google_username
+google_groups
+netid
+student_number
+study
+```
+
+## Scopes to claims/attributes
+
+
 ## Resources
 
 https://www.keycloak.org/docs/latest/server_development/index.html#_providers
