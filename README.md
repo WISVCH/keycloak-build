@@ -13,6 +13,8 @@ Select NetID/Google -> Mappers).
 To ensure users are correct, an additional conditional flow should be added to the identity provider which checks
 membership status (gotten from Dienst) and student status (gotten from SURFconext only).
 
+Beyond that, remember to add the user attributes and correct scopes as described below.
+
 ## Attributes to add to Keycloak
 ```
 not_found
@@ -38,6 +40,7 @@ study
 ```
 
 ## Scopes to claims/attributes
+```
 openid:
 - sub
 
@@ -81,11 +84,10 @@ student:
 - netid
 - student_number
 - study
-
+```
 ## Resources
-
-https://www.keycloak.org/docs/latest/server_development/index.html#_providers
-https://github.com/keycloak/keycloak-quickstarts/
-https://medium.com/@djordjev9/customizing-keycloak-part-1-extending-keycloak-with-user-federation-1633238d8ff5
-https://www.keycloak.org/docs-api/latest/javadocs/index.html
+- https://www.keycloak.org/docs/latest/server_development/index.html#_providers
+- https://github.com/keycloak/keycloak-quickstarts/
+- https://medium.com/@djordjev9/customizing-keycloak-part-1-extending-keycloak-with-user-federation-1633238d8ff5
+- https://www.keycloak.org/docs-api/latest/javadocs/index.html
 

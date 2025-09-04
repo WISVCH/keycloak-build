@@ -55,7 +55,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
-            <scope>runtime</scope>
+            <scope>provided</scope>
             <version>2.18.2</version>
         </dependency>
 
