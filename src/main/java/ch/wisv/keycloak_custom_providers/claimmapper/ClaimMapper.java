@@ -69,6 +69,11 @@ public abstract class ClaimMapper extends AbstractClaimMapper {
         });
         try {
             update(session, realm, user, mapperModel, context);
+
+            //Add user to beheer if beheer
+            if (user.getAttributes().get("google_groups").contains("beheer")) {
+                addUserToBeheer(realm, user);
+            }
         } catch (UserNotFoundException e) {
             user.setSingleAttribute("not_found", "true");
         }
