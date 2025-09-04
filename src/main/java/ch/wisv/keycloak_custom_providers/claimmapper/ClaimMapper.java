@@ -113,7 +113,7 @@ public abstract class ClaimMapper extends AbstractClaimMapper {
 //        user.setSingleAttribute("locale", person.);
 //        user.setSingleAttribute("updated_at", person.);
 
-        user.setSingleAttribute("birthdate", person.getBirthdate().toString());
+//        user.setSingleAttribute("birthdate", person.getBirthdate().toString());
 
         user.setSingleAttribute("email", person.getEmail());
 //        user.setSingleAttribute("email_verified", person.);

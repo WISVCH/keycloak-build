@@ -15,9 +15,7 @@ package ch.wisv.keycloak_custom_providers.claimmapper.models.api;/*
  */
 
 
-
 import java.io.Serializable;
-import java.time.LocalDate;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -36,7 +34,13 @@ public class Person extends Entity implements Serializable {
     private String phoneMobile;
 
     private String gender;
-    private LocalDate birthdate;
+    /*
+    TODO FIXME This would not work because of below exception
+    Could not get dienst2 person for google_username: joshuag: com.fasterxml.jackson.databind.exc.InvalidDefinitionException:
+    Java 8 date/time type `java.time.LocalDate` not supported by default: add Module "com.fasterxml.jackson.datatype:jackson-datatype-jsr310" to enable handling
+
+     */
+//    private LocalDate birthdate;
 
     private String googleUsername;
 
@@ -78,9 +82,9 @@ public class Person extends Entity implements Serializable {
         return gender;
     }
 
-    public LocalDate getBirthdate() {
-        return birthdate;
-    }
+//    public LocalDate getBirthdate() {
+//        return birthdate;
+//    }
 
     public String getGoogleUsername() {
         return googleUsername;
@@ -127,7 +131,7 @@ public class Person extends Entity implements Serializable {
                 Objects.equals(postfixTitles, person.postfixTitles) &&
                 Objects.equals(phoneMobile, person.phoneMobile) &&
                 Objects.equals(gender, person.gender) &&
-                Objects.equals(birthdate, person.birthdate) &&
+//                Objects.equals(birthdate, person.birthdate) &&
                 Objects.equals(googleUsername, person.googleUsername) &&
                 Objects.equals(netid, person.netid) &&
                 membershipStatus == person.membershipStatus &&
@@ -137,7 +141,9 @@ public class Person extends Entity implements Serializable {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), formattedName, titles, initials, firstname, preposition, surname,
-                postfixTitles, phoneMobile, gender, birthdate, googleUsername, netid, membershipStatus,
+                postfixTitles, phoneMobile, gender,
+//                birthdate,
+                googleUsername, netid, membershipStatus,
                 student);
     }
 }
