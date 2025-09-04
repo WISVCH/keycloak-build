@@ -5,5 +5,5 @@ import java.util.List;
 public class Dienst2PeopleResponse {
 
     public int count;
-    public List<Dienst2Person> results;
+    public List<Person> results;
 }

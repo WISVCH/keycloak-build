@@ -1,7 +1,7 @@
 package ch.wisv.keycloak_custom_providers.claimmapper.services;
 
 import ch.wisv.keycloak_custom_providers.claimmapper.models.api.Dienst2PeopleResponse;
-import ch.wisv.keycloak_custom_providers.claimmapper.models.api.Dienst2Person;
+import ch.wisv.keycloak_custom_providers.claimmapper.models.api.Person;
 import ch.wisv.keycloak_custom_providers.claimmapper.models.exception.UserNotFoundException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -31,7 +31,7 @@ public class Dienst2Service {
                 .configure(JsonParser.Feature.INCLUDE_SOURCE_IN_LOCATION, true);
     }
 
-    public Dienst2Person getDienst2PersonByNetId(String netId, KeycloakSession session, IdentityProviderMapperModel mapperModel) throws UserNotFoundException {
+    public Person getDienst2PersonByNetId(String netId, KeycloakSession session, IdentityProviderMapperModel mapperModel) throws UserNotFoundException {
         try {
             logger.info("Retrieving dienst2 person by netId: " + netId);
             CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
@@ -60,7 +60,7 @@ public class Dienst2Service {
         }
     }
 
-    public Dienst2Person getDienst2PersonByGoogleUsername(String googleUsername, KeycloakSession session, IdentityProviderMapperModel mapperModel) throws UserNotFoundException {
+    public Person getDienst2PersonByGoogleUsername(String googleUsername, KeycloakSession session, IdentityProviderMapperModel mapperModel) throws UserNotFoundException {
         try {
             logger.info("Retrieving dienst2 person by google username: " + googleUsername);
             CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();

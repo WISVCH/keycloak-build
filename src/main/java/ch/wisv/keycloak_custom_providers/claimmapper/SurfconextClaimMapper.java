@@ -1,6 +1,6 @@
 package ch.wisv.keycloak_custom_providers.claimmapper;
 
-import ch.wisv.keycloak_custom_providers.claimmapper.models.api.Dienst2Person;
+import ch.wisv.keycloak_custom_providers.claimmapper.models.api.Person;
 import ch.wisv.keycloak_custom_providers.claimmapper.models.exception.UserNotFoundException;
 import ch.wisv.keycloak_custom_providers.claimmapper.services.Dienst2Service;
 import ch.wisv.keycloak_custom_providers.claimmapper.services.GoogleAccountService;
@@ -112,14 +112,14 @@ public class SurfconextClaimMapper extends AbstractClaimMapper {
         });
         String netid = "jgort";
         try {
-            Dienst2Person person = dienst2Service.getDienst2PersonByNetId(netid, session, mapperModel);
+            Person person = dienst2Service.getDienst2PersonByNetId(netid, session, mapperModel);
             user.setFirstName(person.getFirstname());
             user.setLastName(person.getSurname());
-            user.setSingleAttribute("google_username", person.getGoogle_username());
+            user.setSingleAttribute("google_username", person.getGoogleUsername());
             user.setSingleAttribute("netid", person.getNetid());
-            user.setSingleAttribute("membership_status", String.valueOf(person.getMembership_status()));
+            user.setSingleAttribute("membership_status", String.valueOf(person.getMembershipStatus().getValue()));
 
-            String googleEmail = person.getGoogle_username() + "@ch.tudelft.nl";
+            String googleEmail = person.getGoogleUsername() + "@ch.tudelft.nl";
             List<String> googleGroups = googleAccountService.retrieveGoogleGroups(googleEmail);
             user.setAttribute("google_groups", googleGroups);
         } catch (
@@ -137,14 +137,14 @@ public class SurfconextClaimMapper extends AbstractClaimMapper {
         });
         String netid = "jgort";
         try {
-            Dienst2Person person = dienst2Service.getDienst2PersonByNetId(netid, session, mapperModel);
+            Person person = dienst2Service.getDienst2PersonByNetId(netid, session, mapperModel);
             user.setFirstName(person.getFirstname());
             user.setLastName(person.getSurname());
-            user.setSingleAttribute("google_username", person.getGoogle_username());
+            user.setSingleAttribute("google_username", person.getGoogleUsername());
             user.setSingleAttribute("netid", person.getNetid());
-            user.setSingleAttribute("membership_status", String.valueOf(person.getMembership_status()));
+            user.setSingleAttribute("membership_status", String.valueOf(person.getMembershipStatus().getValue()));
 
-            String googleEmail = person.getGoogle_username() + "@ch.tudelft.nl";
+            String googleEmail = person.getGoogleUsername() + "@ch.tudelft.nl";
             List<String> googleGroups = googleAccountService.retrieveGoogleGroups(googleEmail);
             user.setAttribute("google_groups", googleGroups);
         } catch (UserNotFoundException e) {
