@@ -76,6 +76,18 @@ public class GoogleAccountService {
         } catch (IOException e) {
             logger.error("Could not get google groups.", e);
         }
-        return googleGroups;
+        return getSlugsFromEmails(googleGroups);
+    }
+
+    private List<String> getSlugsFromEmails(List<String> groupEmails) {
+        List<String> slugs = new ArrayList<>();
+        for (String email : groupEmails) {
+            String slug = email
+                    .replace("-commissie@ch.tudelft.nl", "")
+                    .replace("-group@ch.tudelft.nl", "")
+                    .replace("@ch.tudelft.nl", "");
+            slugs.add(slug);
+        }
+        return slugs;
     }
 }
