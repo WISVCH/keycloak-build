@@ -52,6 +52,7 @@ public class Person extends Entity implements Serializable {
 
     private String netid;
 
+    //TODO See if this can be an enum again
     private int membershipStatus;
 
     private Student student;

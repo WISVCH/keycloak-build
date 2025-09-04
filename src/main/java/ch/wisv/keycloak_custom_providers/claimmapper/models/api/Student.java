@@ -15,12 +15,16 @@ package ch.wisv.keycloak_custom_providers.claimmapper.models.api;/*
  */
 
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+
 import java.io.Serializable;
 import java.util.Objects;
 
 /**
  * Member model
  */
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class Student implements Serializable {
     private String study;
     private String studentNumber;

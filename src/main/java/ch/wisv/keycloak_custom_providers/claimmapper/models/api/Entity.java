@@ -14,6 +14,9 @@ package ch.wisv.keycloak_custom_providers.claimmapper.models.api;/*
  * limitations under the License.
  */
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+
 import java.io.Serializable;
 import java.net.URI;
 import java.util.Objects;
@@ -21,6 +24,7 @@ import java.util.Objects;
 /**
  * Entity model
  */
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class Entity implements Serializable {
     private Integer id;
     private URI url;
