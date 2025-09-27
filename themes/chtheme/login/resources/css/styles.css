@@ -3,7 +3,8 @@
     --keycloak-bg-logo-url: url("../img/owl.webp");
     --keycloak-logo-height: 63px;
     --keycloak-logo-width: 300px;
-    --keycloak-card-top-color: var(--pf-v5-global--palette--blue-400);
+    --pf-v5-global--primary-color--100: #1e274a;
+    --keycloak-card-top-color: var(--pf-v5-global--primary-color--100);
 }
 
 .pf-v5-c-login__container {
@@ -159,4 +160,11 @@ hr {
 
 .tudelft {
     margin-right: -20px;
+}
+
+@media (prefers-color-scheme: dark) {
+    .pf-v5-c-button.pf-m-secondary {
+        background-color: var(--pf-v5-global--primary-color--100);
+        color: var(--pf-v5-c-button--m-primary--Color);
+    }
 }
