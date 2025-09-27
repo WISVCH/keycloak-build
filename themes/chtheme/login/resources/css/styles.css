@@ -3,7 +3,8 @@
     --keycloak-bg-logo-url: url("../img/owl.webp");
     --keycloak-logo-height: 63px;
     --keycloak-logo-width: 300px;
-    --keycloak-card-top-color: var(--pf-v5-global--palette--blue-400);
+    --pf-v5-global--primary-color--100: #1e274a;
+    --keycloak-card-top-color: var(--pf-v5-global--primary-color--100);
 }
 
 .pf-v5-c-login__container {
@@ -29,10 +30,20 @@
 .login-pf body {
     background: var(--keycloak-bg-logo-url) no-repeat center center fixed;
     background-size: cover;
-    -webkit-backdrop-filter: blur(5px);
-    backdrop-filter: blur(5px);
     background-position: center;
     height: 100%;
+
+    &:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background: #000000;
+        opacity: .3;
+        z-index: -1;
+    }
 }
 
 div.kc-logo-text {
@@ -145,4 +156,15 @@ hr {
 @media (prefers-color-scheme: light) {
     .svg-light { display: inline; }
     .svg-dark { display: none; }
+}
+
+.tudelft {
+    margin-right: -20px;
+}
+
+@media (prefers-color-scheme: dark) {
+    .pf-v5-c-button.pf-m-secondary {
+        background-color: var(--pf-v5-global--primary-color--100);
+        color: var(--pf-v5-c-button--m-primary--Color);
+    }
 }
