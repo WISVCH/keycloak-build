@@ -156,3 +156,7 @@ hr {
     .svg-light { display: inline; }
     .svg-dark { display: none; }
 }
+
+.tudelft {
+    margin-right: -20px;
+}
