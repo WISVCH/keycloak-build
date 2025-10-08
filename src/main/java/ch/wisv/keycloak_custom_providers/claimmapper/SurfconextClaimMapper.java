@@ -4,6 +4,7 @@ import ch.wisv.keycloak_custom_providers.claimmapper.models.api.Person;
 import ch.wisv.keycloak_custom_providers.claimmapper.models.exception.UserNotFoundException;
 import ch.wisv.keycloak_custom_providers.claimmapper.services.Dienst2Service;
 import ch.wisv.keycloak_custom_providers.claimmapper.services.GoogleAccountService;
+import org.jboss.logging.Logger;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.KeycloakSession;
@@ -15,6 +16,9 @@ import java.util.List;
 public class SurfconextClaimMapper extends ClaimMapper {
 
     public static final String PROVIDER_ID = "surfconext-claim-mapper";
+
+    private static final Logger logger = Logger.getLogger(SurfconextClaimMapper.class);
+
 
     private final Dienst2Service dienst2Service;
     private final GoogleAccountService googleAccountService;
@@ -32,6 +36,9 @@ public class SurfconextClaimMapper extends ClaimMapper {
 
     @Override
     public void update(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) throws UserNotFoundException {
+        user.getAttributes().forEach((key, value) -> {
+            logger.info(key + ": " + value);
+        });
         String netid = "jgort"; //TODO retrieve netid from correct TUD/surf claim
 
         Person person = dienst2Service.getDienst2PersonByNetId(netid, session, mapperModel);
