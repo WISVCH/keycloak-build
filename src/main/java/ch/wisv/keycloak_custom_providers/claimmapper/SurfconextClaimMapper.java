@@ -39,6 +39,7 @@ public class SurfconextClaimMapper extends ClaimMapper {
         user.getAttributes().forEach((key, value) -> {
             logger.info(key + ": " + value);
         });
+
         String netid = "jgort"; //TODO retrieve netid from correct TUD/surf claim
 
         Person person = dienst2Service.getDienst2PersonByNetId(netid, session, mapperModel);

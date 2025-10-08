@@ -3,6 +3,7 @@ package ch.wisv.keycloak_custom_providers.claimmapper;
 import ch.wisv.keycloak_custom_providers.claimmapper.models.api.Person;
 import ch.wisv.keycloak_custom_providers.claimmapper.models.api.Student;
 import ch.wisv.keycloak_custom_providers.claimmapper.models.exception.UserNotFoundException;
+import com.google.common.collect.ImmutableSet;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
@@ -21,7 +22,7 @@ import java.util.Set;
 //UserAttributeMapper
 public abstract class ClaimMapper extends AbstractClaimMapper {
 
-    private static final Logger logger = Logger.getLogger(SurfconextClaimMapper.class);
+    private static final Logger logger = Logger.getLogger(ClaimMapper.class);
 
     public static final String[] COMPATIBLE_PROVIDERS = {KeycloakOIDCIdentityProviderFactory.PROVIDER_ID, OIDCIdentityProviderFactory.PROVIDER_ID};
     private static final Set<IdentityProviderSyncMode> IDENTITY_PROVIDER_SYNC_MODES = new HashSet<>(Arrays.asList(IdentityProviderSyncMode.values()));
@@ -64,9 +65,19 @@ public abstract class ClaimMapper extends AbstractClaimMapper {
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         logger.info("Updating for " + providerId + ", user user: " + user.getId() + " user email: " + user.getEmail() + " context email: " + context.getEmail());
+
+        logger.info("User attributes");
         user.getAttributes().forEach((key, value) -> {
             logger.info("attribute: " + key + " : " + value.toString());
         });
+
+        logger.info("Context attributes");
+        context.getAttributes().forEach((key, value) -> {
+            logger.info("attribute: " + key + " : " + value.toString());
+        });
+
+        logger.info("Context token: " + context.getToken());
+
         try {
             update(session, realm, user, mapperModel, context);
 
@@ -82,9 +93,17 @@ public abstract class ClaimMapper extends AbstractClaimMapper {
     @Override
     public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         logger.info("Importing for " + providerId + ", user: " + user.getId() + " user email: " + user.getEmail() + " context email: " + context.getEmail());
+        logger.info("User attributes");
         user.getAttributes().forEach((key, value) -> {
             logger.info("attribute: " + key + " : " + value.toString());
         });
+
+        logger.info("Context attributes");
+        context.getAttributes().forEach((key, value) -> {
+            logger.info("attribute: " + key + " : " + value.toString());
+        });
+
+        logger.info("Context token: " + context.getToken());
         try {
             update(session, realm, user, mapperModel, context);
 
