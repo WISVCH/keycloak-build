@@ -36,11 +36,14 @@ public class SurfconextClaimMapper extends ClaimMapper {
 
     @Override
     public void update(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) throws UserNotFoundException {
-        user.getAttributes().forEach((key, value) -> {
-            logger.info(key + ": " + value);
-        });
-
-        String netid = "jgort"; //TODO retrieve netid from correct TUD/surf claim
+        List<String> netidAttribute = user.getAttributes().get("netid");
+        if (netidAttribute == null) {
+            throw new UserNotFoundException();
+        }
+        String netid = netidAttribute.getFirst();
+        if (netid == null) {
+           throw new UserNotFoundException();
+        }
 
         Person person = dienst2Service.getDienst2PersonByNetId(netid, session, mapperModel);
         String googleEmail = person.getGoogleUsername() + "@ch.tudelft.nl";

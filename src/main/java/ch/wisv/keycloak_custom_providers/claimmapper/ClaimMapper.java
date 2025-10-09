@@ -217,4 +217,10 @@ public abstract class ClaimMapper extends AbstractClaimMapper {
         return "If all claims exists, grant the user the specified realm or client role.";
     }
 
+    @Override
+    public int order() {
+
+        //TODO Misschien deze heel hoog maken zodat de claim mappers voor netid en eduperson_affiliation eerst zijn
+        return super.order();
+    }
 }
