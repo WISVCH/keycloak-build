@@ -37,7 +37,10 @@ public class GoogleClaimMapper extends ClaimMapper {
 
         String googleUsername = googleEmail.split("@")[0];
         Person person = dienst2Service.getDienst2PersonByGoogleUsername(googleUsername, session, mapperModel);
-
+        UserModel personByUsername = session.users().getUserByUsername(realm, SUBJECT_PREFIX + person.getId());
+        if (personByUsername != null) {
+            context.setId(personByUsername.getId());
+        }
         setUserAttributes(user, person, googleGroups);
     }
 }

@@ -11,6 +11,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
+import java.util.Collections;
 import java.util.List;
 
 public class SurfconextClaimMapper extends ClaimMapper {
@@ -46,8 +47,19 @@ public class SurfconextClaimMapper extends ClaimMapper {
         }
 
         Person person = dienst2Service.getDienst2PersonByNetId(netid, session, mapperModel);
-        String googleEmail = person.getGoogleUsername() + "@ch.tudelft.nl";
-        List<String> googleGroups = googleAccountService.retrieveGoogleGroups(googleEmail);
+
+        UserModel personByUsername = session.users().getUserByUsername(realm, SUBJECT_PREFIX + person.getId());
+        if (personByUsername != null) {
+            context.setId(personByUsername.getId());
+        }
+
+        List<String> googleGroups;
+        if(person.getGoogleUsername() != null) {
+            String googleEmail = person.getGoogleUsername() + "@ch.tudelft.nl";
+            googleGroups = googleAccountService.retrieveGoogleGroups(googleEmail);
+        } else {
+            googleGroups = Collections.emptyList();
+        }
 
         setUserAttributes(user, person, googleGroups);
     }
