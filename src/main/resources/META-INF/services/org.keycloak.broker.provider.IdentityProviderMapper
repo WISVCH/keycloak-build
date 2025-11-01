@@ -1,2 +1,3 @@
 ch.wisv.keycloak_custom_providers.claimmapper.SurfconextClaimMapper
 ch.wisv.keycloak_custom_providers.claimmapper.GoogleClaimMapper
+nl.tudelft.ch.login.mapper.SurfconextNetIdUserIdMapper
