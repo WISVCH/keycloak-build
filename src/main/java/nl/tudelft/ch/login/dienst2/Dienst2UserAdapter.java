@@ -69,10 +69,6 @@ public class Dienst2UserAdapter extends AbstractUserAdapterFederatedStorage {
         if (person.getEmail() != null && !person.getEmail().isBlank()) {
             return person.getEmail();
         }
-        String googleUsername = person.getGoogleUsername();
-        if (googleUsername != null && !googleUsername.isBlank()) {
-            return googleUsername + "@ch.tudelft.nl";
-        }
         return null;
     }
 
