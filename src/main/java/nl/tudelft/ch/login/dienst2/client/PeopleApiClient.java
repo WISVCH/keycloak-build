@@ -127,9 +127,7 @@ public class PeopleApiClient {
                     LOGGER.debugf("People API returned zero google groups for id %d", personId);
                     return Collections.emptyList();
                 }
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.tracef("Dienst2 google groups for %d -> %s", personId, groups);
-                }
+                LOGGER.tracef("Dienst2 google groups for %d -> %s", personId, groups);
                 return Collections.unmodifiableList(groups);
             }
         }

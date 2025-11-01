@@ -55,9 +55,7 @@ public class Dienst2UserProvider implements UserStorageProvider, UserLookupProvi
 
     @Override
     public UserModel getUserById(RealmModel realmModel, String id) {
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.tracef("getUserById realm=%s id=%s", realmModel.getName(), id);
-        }
+        LOGGER.tracef("getUserById realm=%s id=%s", realmModel.getName(), id);
         StorageId storageId = new StorageId(id);
         String externalId = storageId.getExternalId();
         if (externalId == null) {
@@ -80,9 +78,7 @@ public class Dienst2UserProvider implements UserStorageProvider, UserLookupProvi
 
     @Override
     public UserModel getUserByUsername(RealmModel realmModel, String username) {
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.tracef("getUserByUsername realm=%s username=%s", realmModel.getName(), username);
-        }
+        LOGGER.tracef("getUserByUsername realm=%s username=%s", realmModel.getName(), username);
 
         if (username == null || username.isBlank()) {
             LOGGER.trace("getUserByUsername ignored because username is blank");
@@ -149,9 +145,7 @@ public class Dienst2UserProvider implements UserStorageProvider, UserLookupProvi
         try {
             List<GroupModel> cached = getGroupCache().get(groupCacheKey(realm, person.getId()));
             if (cached != null) {
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.tracef("Using cached google groups for person %s", person.getId());
-                }
+                LOGGER.tracef("Using cached google groups for person %s", person.getId());
                 return cached;
             }
 
@@ -180,9 +174,7 @@ public class Dienst2UserProvider implements UserStorageProvider, UserLookupProvi
                 }
             }
 
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.tracef("Google groups for person %s -> %s", person.getId(), groupNames);
-            }
+            LOGGER.tracef("Google groups for person %s -> %s", person.getId(), groupNames);
 
             List<GroupModel> immutable = Collections.unmodifiableList(resolved);
             getGroupCache().put(groupCacheKey(realm, person.getId()), immutable);
@@ -197,9 +189,7 @@ public class Dienst2UserProvider implements UserStorageProvider, UserLookupProvi
         Map<Integer, Person> cache = getPersonCache();
         Person cached = cache.get(id);
         if (cached != null) {
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.tracef("Using cached person %s", id);
-            }
+            LOGGER.tracef("Using cached person %s", id);
             return cached;
         }
         Person person = peopleApiClient.getPersonById(id).orElse(null);

@@ -81,9 +81,7 @@ public class SurfconextNetIdUserIdMapper extends AbstractClaimMapper {
             LOGGER.debugf("NetID claim '%s' missing for provider %s", mapperModel.getConfig().get(CLAIM), context.getIdpConfig().getAlias());
             return;
         }
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.tracef("Setting broker user id to netid=%s", netid);
-        }
+        LOGGER.tracef("Setting broker user id to netid=%s", netid);
         context.setId(netid);
         context.setLegacyId(netid);
         context.setBrokerUserId(netid);
