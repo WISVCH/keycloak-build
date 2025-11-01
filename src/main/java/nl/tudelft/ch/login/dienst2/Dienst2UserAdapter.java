@@ -39,7 +39,7 @@ public class Dienst2UserAdapter extends AbstractUserAdapterFederatedStorage {
 
     @Override
     public void setUsername(String username) {
-        setSingleAttributeOrRemove(UserModel.USERNAME, username);
+        // No-op: Dienst2 data is authoritative
     }
 
     @Override
