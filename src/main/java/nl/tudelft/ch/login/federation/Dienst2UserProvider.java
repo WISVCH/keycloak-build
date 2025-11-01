@@ -17,6 +17,7 @@ import org.keycloak.storage.user.UserLookupProvider;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -25,6 +26,9 @@ import java.util.stream.Collectors;
 
 public class Dienst2UserProvider implements UserStorageProvider, UserLookupProvider {
     private static final Logger LOGGER = Logger.getLogger(Dienst2UserProvider.class);
+
+    private static final String PERSON_CACHE_KEY = Dienst2UserProvider.class.getName() + ".person-cache";
+    private static final String GROUP_CACHE_KEY = Dienst2UserProvider.class.getName() + ".group-cache";
 
     private final KeycloakSession session;
     private final ComponentModel model;
@@ -62,7 +66,7 @@ public class Dienst2UserProvider implements UserStorageProvider, UserLookupProvi
         }
 
         try {
-            Optional<Person> person = peopleApiClient.getPersonById(Integer.valueOf(externalId));
+            Optional<Person> person = Optional.ofNullable(fetchPerson(Integer.parseInt(externalId)));
             LOGGER.tracef("getUserById result present=%s", person.isPresent());
             return person.map(value -> toUserModel(realmModel, value)).orElse(null);
         } catch (NumberFormatException e) {
@@ -99,8 +103,8 @@ public class Dienst2UserProvider implements UserStorageProvider, UserLookupProvi
                 String idPart = username.substring("wisvch.".length());
                 try {
                     Integer id = Integer.valueOf(idPart);
-                    person = peopleApiClient.getPersonById(id);
-                    LOGGER.tracef("Resolved via id=%s present=%s", Optional.of(id), person.isPresent());
+                    person = Optional.ofNullable(fetchPerson(id));
+                    LOGGER.tracef("Resolved via id=%s present=%s", String.valueOf(id), person.isPresent());
                 } catch (NumberFormatException ex) {
                     LOGGER.warnf("Wisvch username prefix contains invalid id '%s'", idPart);
                     person = Optional.empty();
@@ -143,6 +147,14 @@ public class Dienst2UserProvider implements UserStorageProvider, UserLookupProvi
         }
 
         try {
+            List<GroupModel> cached = getGroupCache().get(groupCacheKey(realm, person.getId()));
+            if (cached != null) {
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.tracef("Using cached google groups for person %s", person.getId());
+                }
+                return cached;
+            }
+
             List<String> groupNames = peopleApiClient.getGoogleGroups(person.getId());
             if (groupNames == null || groupNames.isEmpty()) {
                 LOGGER.tracef("No google groups for person %s", person.getId());
@@ -172,10 +184,52 @@ public class Dienst2UserProvider implements UserStorageProvider, UserLookupProvi
                 LOGGER.tracef("Google groups for person %s -> %s", person.getId(), groupNames);
             }
 
-            return Collections.unmodifiableList(resolved);
+            List<GroupModel> immutable = Collections.unmodifiableList(resolved);
+            getGroupCache().put(groupCacheKey(realm, person.getId()), immutable);
+            return immutable;
         } catch (IOException e) {
             LOGGER.errorf(e, "Failed to fetch google groups for Dienst2 person %s", person.getId());
             return Collections.emptyList();
         }
+    }
+
+    private Person fetchPerson(Integer id) throws IOException {
+        Map<Integer, Person> cache = getPersonCache();
+        Person cached = cache.get(id);
+        if (cached != null) {
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.tracef("Using cached person %s", id);
+            }
+            return cached;
+        }
+        Person person = peopleApiClient.getPersonById(id).orElse(null);
+        if (person != null) {
+            cache.put(id, person);
+        }
+        return person;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<Integer, Person> getPersonCache() {
+        Map<Integer, Person> cache = (Map<Integer, Person>) session.getAttribute(PERSON_CACHE_KEY);
+        if (cache == null) {
+            cache = new HashMap<>();
+            session.setAttribute(PERSON_CACHE_KEY, cache);
+        }
+        return cache;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, List<GroupModel>> getGroupCache() {
+        Map<String, List<GroupModel>> cache = (Map<String, List<GroupModel>>) session.getAttribute(GROUP_CACHE_KEY);
+        if (cache == null) {
+            cache = new HashMap<>();
+            session.setAttribute(GROUP_CACHE_KEY, cache);
+        }
+        return cache;
+    }
+
+    private String groupCacheKey(RealmModel realm, Integer personId) {
+        return realm.getId() + ':' + personId;
     }
 }
