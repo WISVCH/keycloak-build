@@ -56,7 +56,7 @@ public class PeopleApiClient {
 
         URI personUri = apiRoot.resolve("people/" + id + "/");
         HttpGet request = new HttpGet(personUri);
-        addDefaultHeaders(request);
+        addDienst2AuthorizationHeader(request);
 
         try (CloseableHttpResponse response = httpClient.execute(request)) {
             traceRequest("GET", personUri, null);
@@ -102,7 +102,7 @@ public class PeopleApiClient {
 
         URI uri = apiRoot.resolve("people/" + personId + "/google_groups/");
         HttpGet request = new HttpGet(uri);
-        addDefaultHeaders(request);
+        addDienst2AuthorizationHeader(request);
         traceRequest("GET", uri, null);
 
         try (CloseableHttpResponse response = httpClient.execute(request)) {
@@ -169,7 +169,7 @@ public class PeopleApiClient {
         return builder.build();
     }
 
-    private void addDefaultHeaders(HttpUriRequest request) {
+    private void addDienst2AuthorizationHeader(HttpUriRequest request) {
         request.setHeader(HttpHeaders.ACCEPT, "application/json");
         request.setHeader(HttpHeaders.AUTHORIZATION, "Token " + apiKey);
     }
@@ -227,7 +227,7 @@ public class PeopleApiClient {
 
     private PeopleResponse executePeopleRequest(URI uri) throws IOException {
         HttpGet request = new HttpGet(uri);
-        addDefaultHeaders(request);
+        addDienst2AuthorizationHeader(request);
 
         try (CloseableHttpResponse response = httpClient.execute(request)) {
             int statusCode = response.getStatusLine().getStatusCode();
