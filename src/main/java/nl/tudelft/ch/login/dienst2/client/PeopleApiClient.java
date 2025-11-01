@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import jakarta.ws.rs.core.UriBuilder;
 import nl.tudelft.ch.login.dienst2.model.PeopleResponse;
 import nl.tudelft.ch.login.dienst2.model.Person;
 import org.apache.http.HttpHeaders;
@@ -16,17 +17,11 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 
-import jakarta.ws.rs.core.UriBuilder;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 public class PeopleApiClient {
 
@@ -47,6 +42,45 @@ public class PeopleApiClient {
                 .configure(JsonParser.Feature.INCLUDE_SOURCE_IN_LOCATION, true);
         this.apiRoot = buildApiRoot(Objects.requireNonNull(baseUrl, "baseUrl"), Objects.requireNonNull(endpoint, "endpoint"));
         this.apiKey = apiKey;
+    }
+
+    private static URI buildApiRoot(String baseUrl, String endpoint) {
+        String normalizedBase = trimTrailingSlash(baseUrl);
+        String normalizedEndpoint = trimLeadingSlash(endpoint);
+        if (normalizedBase.isEmpty()) {
+            throw new IllegalArgumentException("baseUrl must not be empty");
+        }
+        if (normalizedEndpoint.isEmpty()) {
+            throw new IllegalArgumentException("endpoint must not be empty");
+        }
+        if (!normalizedEndpoint.endsWith("/")) {
+            normalizedEndpoint = normalizedEndpoint + "/";
+        }
+        return URI.create(normalizedBase + "/" + normalizedEndpoint);
+    }
+
+    private static String trimTrailingSlash(String value) {
+        if (value == null || value.isEmpty()) {
+            return "";
+        }
+        int length = value.length();
+        int index = length;
+        while (index > 0 && value.charAt(index - 1) == '/') {
+            index--;
+        }
+        return value.substring(0, index);
+    }
+
+    private static String trimLeadingSlash(String value) {
+        if (value == null || value.isEmpty()) {
+            return "";
+        }
+        int length = value.length();
+        int index = 0;
+        while (index < length && value.charAt(index) == '/') {
+            index++;
+        }
+        return value.substring(index);
     }
 
     public Optional<Person> getPersonById(Integer id) throws IOException {
@@ -122,7 +156,8 @@ public class PeopleApiClient {
             }
 
             try (InputStream content = response.getEntity().getContent()) {
-                List<String> groups = objectMapper.readValue(content, new TypeReference<List<String>>() {});
+                List<String> groups = objectMapper.readValue(content, new TypeReference<List<String>>() {
+                });
                 if (groups == null || groups.isEmpty()) {
                     LOGGER.debugf("People API returned zero google groups for id %d", personId);
                     return Collections.emptyList();
@@ -170,45 +205,6 @@ public class PeopleApiClient {
     private void addDienst2AuthorizationHeader(HttpUriRequest request) {
         request.setHeader(HttpHeaders.ACCEPT, "application/json");
         request.setHeader(HttpHeaders.AUTHORIZATION, "Token " + apiKey);
-    }
-
-    private static URI buildApiRoot(String baseUrl, String endpoint) {
-        String normalizedBase = trimTrailingSlash(baseUrl);
-        String normalizedEndpoint = trimLeadingSlash(endpoint);
-        if (normalizedBase.isEmpty()) {
-            throw new IllegalArgumentException("baseUrl must not be empty");
-        }
-        if (normalizedEndpoint.isEmpty()) {
-            throw new IllegalArgumentException("endpoint must not be empty");
-        }
-        if (!normalizedEndpoint.endsWith("/")) {
-            normalizedEndpoint = normalizedEndpoint + "/";
-        }
-        return URI.create(normalizedBase + "/" + normalizedEndpoint);
-    }
-
-    private static String trimTrailingSlash(String value) {
-        if (value == null || value.isEmpty()) {
-            return "";
-        }
-        int length = value.length();
-        int index = length;
-        while (index > 0 && value.charAt(index - 1) == '/') {
-            index--;
-        }
-        return value.substring(0, index);
-    }
-
-    private static String trimLeadingSlash(String value) {
-        if (value == null || value.isEmpty()) {
-            return "";
-        }
-        int length = value.length();
-        int index = 0;
-        while (index < length && value.charAt(index) == '/') {
-            index++;
-        }
-        return value.substring(index);
     }
 
     private String readBodyQuietly(CloseableHttpResponse response) {

@@ -3,19 +3,11 @@ package nl.tudelft.ch.login.dienst2;
 import nl.tudelft.ch.login.dienst2.model.MembershipStatus;
 import nl.tudelft.ch.login.dienst2.model.Person;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.*;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
 
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
 
 public class Dienst2UserAdapter extends AbstractUserAdapterFederatedStorage {

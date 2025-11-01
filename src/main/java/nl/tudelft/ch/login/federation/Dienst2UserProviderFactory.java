@@ -1,7 +1,5 @@
 package nl.tudelft.ch.login.federation;
 
-import ch.wisv.keycloak_custom_providers.claimmapper.ClaimMapper;
-import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
@@ -16,12 +14,11 @@ import java.util.List;
 public class Dienst2UserProviderFactory implements UserStorageProviderFactory<Dienst2UserProvider> {
 
     public static final String PROVIDER_ID = "Dienst2";
-
-    private final List<ProviderConfigProperty> configMetadata;
-
     static final String BASE_URL = "baseUrl";
     static final String API_KEY = "apiKey";
     static final String API_ENDPOINT = "apiEndpoint";
+    private final List<ProviderConfigProperty> configMetadata;
+
     public Dienst2UserProviderFactory() {
         configMetadata = ProviderConfigurationBuilder.create()
                 .property(BASE_URL,

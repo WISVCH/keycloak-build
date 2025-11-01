@@ -18,10 +18,6 @@ public enum MembershipStatus {
         this.code = code;
     }
 
-    public int getCode() {
-        return code;
-    }
-
     public static Optional<MembershipStatus> fromCode(Integer code) {
         if (code == null) {
             return Optional.empty();
@@ -29,6 +25,10 @@ public enum MembershipStatus {
         return Arrays.stream(values())
                 .filter(status -> status.code == code)
                 .findFirst();
+    }
+
+    public int getCode() {
+        return code;
     }
 }
 
