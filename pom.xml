@@ -25,7 +25,7 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <keycloak.version>26.3.3</keycloak.version>
         <jackson.version>2.18.2</jackson.version>
-        <jboss.logging.version>3.6.1.Final</jboss.logging.version>
+        <jboss.logging.version>3.6.3.Final</jboss.logging.version>
         <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
         <maven.source.plugin.version>3.4.0</maven.source.plugin.version>
         <maven.shade.plugin.version>3.5.2</maven.shade.plugin.version>
