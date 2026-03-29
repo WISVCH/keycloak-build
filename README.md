@@ -24,10 +24,14 @@ Run from the `keycloak-build` repository root:
 
 ```bash
 mvn package
-docker build -t keycloak-wisvch .
+KEYCLOAK_VERSION="$(mvn -q -DforceStdout help:evaluate -Dexpression=keycloak.version)"
+docker build --build-arg KEYCLOAK_VERSION=${KEYCLOAK_VERSION} -t keycloak-wisvch .
 ```
 
-The image is based on Keycloak `26.3.3` and copies:
+`pom.xml` (`<keycloak.version>`) is the source of truth for the Keycloak runtime version.
+CI reads that value and passes it to Docker as `--build-arg KEYCLOAK_VERSION=...`, so provider dependencies and image base version stay in sync.
+
+The image copies:
 - `target/keycloak-wisvch-custom-providers.jar` to `/opt/keycloak/providers/`
 - `themes/chtheme` to `/opt/keycloak/themes`
 
