@@ -87,9 +87,7 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: ghcr.io/wisvch/keycloak-build
-          tags: |
-            type=sha,format=long,prefix=
-            type=raw,value=latest
+          tags: type=sha, prefix={{date 'YYYYMMDD'}}-
       - name: Build and push image
         uses: docker/build-push-action@v7
         with:
