@@ -1,179 +1,125 @@
 # Keycloak Build for W.I.S.V. 'Christiaan Huygens'
 
-This project contains everything you need to setup the Keycloak instance for authentication and authorization via OIDC
-for our study association.
+![Example login page](docs/login_page.png)
 
-## What do the custom providers provide?
+This repository contains a Keycloak build with:
+- a custom user federation provider (`Dienst2`)
+- a custom login theme (`chtheme`)
 
-Our custom providers allow us to add claims from Google (Google groups) and Dienst (membership_status, contact details,
-etc.) to users on login.
+## How the login flow works
 
-## Keycloak Setup
+1. A user logs in with Google or SURFconext.
+2. An IdP mapper turns external claims into a Keycloak username used for lookup.
+3. Keycloak calls the `Dienst2` federation provider with that username.
+4. The provider resolves the person in Dienst2 and returns a federated Keycloak user (`WISVCH.<id>`), including membership-related attributes.
+5. Google groups are fetched by Dienst2 from Google Workspace and returned to Keycloak as groups.
+6. On first broker login, Keycloak auto-links the IdP account to the existing federated user (without confirmation).
+7. Keycloak issues OIDC tokens to your applications.
 
-### Installation
+This means users are not managed as local Keycloak users. Dienst2 is the source of truth.
 
-First step is ensuring you have a Keycloak instance up and running. Please follow the following guides accordingly:
+## Build
 
-- https://www.keycloak.org/getting-started/getting-started-kube
-- https://www.keycloak.org/server/configuration-production
-- https://www.keycloak.org/documentation
+Run from the `keycloak-build` repository root:
 
-### Realm creation
-
-Once everything is set up, login by going to https://login.wisv.ch/admin. Start by creating a new realm. Please refrain
-from using the master realm for production
-purposes, as it should only be used for general management of Keycloak.
-
-Let's walk through all the different configuration pages and configure them.
-
-### Realm Settings
-
-In the Realm Settings page, start by configuring the names and frontend UI on the General page. Then, ensure that '
-User-managed access', 'Organizations' and 'Admin Permissions' are turned off. Disable 'Unmanaged attributes' as well in
-case of a production environment.
-
-On the Login page, ensure that all options are turned off.
-
-No action is needed on the Email page.
-
-On the Themes page, select 'chtheme' as the login theme. Dark mode should also be enabled (!).
-
-Walk through the Keys, Events, Localization, Security Defenses, Sessions and Client policies pages. TODO define more
-here?
-
-On the User profile page, ensure the following list of attributes is set. No attribute should be editable (neither by
-users or admins), but all attributes should be viewable. In the case of address, they can be combined into an attribute
-group if wanted (same can be done for all scopes, but not necessary).
-
-```
-not_found
-membership_status
-name
-preferred_name
-given_name
-family_name
-gender
-birthdate
-email
-phone_number
-address.street_address
-address.postal_code
-address.locality
-address.country
-address.formatted
-google_username
-google_groups (multivalued)
-netid
-student_number
-study
+```bash
+mvn package
+docker build -t keycloak-wisvch .
 ```
 
-No action is needed on the user registration page.
+The image is based on Keycloak `26.3.3` and copies:
+- `target/keycloak-wisvch-custom-providers.jar` to `/opt/keycloak/providers/`
+- `themes/chtheme` to `/opt/keycloak/themes`
 
-### Authentication
+## Keycloak setup
 
-Within the Authentication page, you can find the different flows, required actions and policies for your realm.
+Use your own URLs, client IDs, secrets, and API tokens.  
+Only settings that are required for this architecture are listed below.
 
-We will start by going to 'Required actions'. Ensure that ALL required actions are disabled.
+### 1) Configure realm behavior
 
-Next up, we will go to 'Flows'. None of the built-in flows need to be changed, but we do need to create a new one, which
-will ensure only authorized users are allowed access. In our case, this means we will check whether the Dienst and
-Google groups lookup went correctly and we will ensure the membership status is valid.
+Set these realm settings:
+- `frontendUrl=https://<your-login-host>`
+- `loginTheme=chtheme` (if you want to use the bundled login theme from this repo)
+- `registrationAllowed=false`
+- `rememberMe=false`
+- `resetPasswordAllowed=false`
+- `verifyEmail=false`
+- `loginWithEmailAllowed=false`
+- `duplicateEmailsAllowed=true`
 
-For this, start by creating a new flow. Within this flow, start by adding the Allow access execution. Then create two
-sub-flows, one for checking the not_found attribute and one for checking the membership_status.
-Within both, create a condition for a user attribute. Then, add the deny access execution to both subflows. It should
-end up as the following flowchart, see this image:
+Disable all Required Actions.
 
-![member_checks.png](docs/images/member_checks.png)
+Account linking in this setup is username-driven and automatic, so self-service and required-action interruptions should be off.
 
-With that, the membership check flow should be complete and ready to go.
+### 2) Configure user profile attributes
 
-### Identity providers
+Add these custom user profile attributes:
+- `google_username`
+- `netid`
+- `membership_status`
+- `formatted_name`
 
-Now we will add the two required identity providers. The setup will share a lot of the configuration.
+Set them to non-editable.  
+Set visibility to match the current model:
+- `google_username`, `netid`, `formatted_name`: view by `admin` and `user`
+- `membership_status`: view by `admin` only
 
-#### SURFConext
+Set `membership_status` as required for role `user`.
 
-Documentation:
+These attributes are populated from Dienst2 and used for authorization/state checks; users should not be able to edit them in Keycloak.
 
-- https://servicedesk.surf.nl/wiki/spaces/IAM/pages/128909938/Claims
-- https://servicedesk.surf.nl/wiki/spaces/IAM/pages/128909841/OpenID+Connect+reference
+### 3) Configure first broker login flow
 
-Service Provider portal: https://sp.surfconext.nl. Login with beheer@ch.tudelft.nl via EduID. Create a new entity like
-the ones already there. Be sure to save the client ID and secret, and setup the identity
-provider as an OpenID Connect provider in Keycloak.
+Create a top-level flow with alias `link exisiting without confimation` and add:
+1. `idp-detect-existing-broker-user` as `REQUIRED`
+2. `idp-auto-link` as `REQUIRED`
 
-For the Advanced settings, ensure that 'Trust Email' is turned on, but everything else is turned off. The post login
-flow should be your newly created membership check flow. The sync mode should be 'Force'.
+This makes first IdP login link directly to an existing user without a confirmation screen.
+This flow must be top-level because IdPs reference it via `firstBrokerLoginFlowAlias`.
 
-Then, go to Mappers, and create a new SurfConext Claim mapper. Configure the dienst2 parameters, and ensure the sync
-mode override is again set to 'Force'. With this, the SURFconext IdP should be ready to go.
+### 4) Configure user federation (`Dienst2`)
 
-#### Google
+Add a User Federation provider:
+- Provider ID: `Dienst2`
+- `baseUrl=https://<dienst2-host>`
+- `apiEndpoint=/<dienst2-api-path>`
+- `apiKey=<dienst2-api-token>`
+- `enabled=true`
 
-Documentation:
+Recommended cache policy:
+- `EVICT_DAILY` at `00:00`
 
-- https://developers.google.com/identity/protocols/oauth2
-- https://console.cloud.google.com/apis/credentials?referrer=search&project=wisvch
+Behavior that drives the rest of the setup:
+- `surfconext.<netid>` is resolved via Dienst2 `netid`
+- `google.<localpart>` is resolved via Dienst2 `google_username`
+- resolved users are exposed as `WISVCH.<id>`
+- Google groups are fetched through Dienst2 (which syncs from Google Workspace) and mapped to Keycloak groups
 
-Create a new OAuth client in Cloud Console, and save the client ID and secret. Again create a new identity provider like
-above, ensuring that you switch out the mapper with the google claim mapper. Set the claim scopes to 'openid email profile'. Then this IdP should also be ready to go.
+### 5) Configure identity providers
 
-### Client scopes
-On the Client scopes page, ensure the following scopes are setup:
-```
-openid:
-- sub
+For each IdP, set:
+- `syncMode=FORCE`
+- `firstBrokerLoginFlowAlias=link exisiting without confimation`
+- `trustEmail=false`
 
-profile:
-- name
-- preferred_username
-- given_name
-- familty_name
-- middle_name
-- nickname
-- profile
-- picture
-- website
-- gender
-- zone_info
-- locale
-- updated_at
-- birthdate
+Google IdP:
+- Use Keycloak `google` provider.
+- Optional restriction: `hostedDomain=<your-domain>`
+- Keep `disableUserInfo=false`.
+- Add mapper `oidc-username-idp-mapper`:
+  - template `${ALIAS}.${CLAIM.email | localpart}`
+  - target `LOCAL`
+  - sync mode `IMPORT`
 
-email:
-- email
-- email_verified
+SURFconext (or another OIDC IdP):
+- Use `oidc` provider with your own OIDC endpoints and issuer.
+- Keep signature validation enabled (`validateSignature=true`, `useJwksUrl=true`).
+- Use `clientAuthMethod=client_secret_post` unless your provider requires a different method.
+- Add mapper `oidc-username-idp-mapper`:
+  - template `${ALIAS}.${CLAIM.uids}`
+  - target `LOCAL`
+  - sync mode `FORCE`
 
-phone:
-- phone_number
-- phone_number_verified
-
-address:
-- address.formatted
-- address.street_address
-- address.locality
-- address.region
-- address.postal_code
-- address.country
-
-auth:
-- google_username
-- google_groups
-
-student:
-- netid
-- student_number
-- study
-```
-
-With that done, you should be ready to go!
-
-## Resources
-
-- https://www.keycloak.org/docs/latest/server_development/index.html#_providers
-- https://github.com/keycloak/keycloak-quickstarts/
-- https://medium.com/@djordjev9/customizing-keycloak-part-1-extending-keycloak-with-user-federation-1633238d8ff5
-- https://www.keycloak.org/docs-api/latest/javadocs/index.html
-
+Important coupling with federation code:
+- aliases and username templates must produce usernames that match the federation lookup patterns (`google.*`, `surfconext.*`), unless you also change the provider code.
