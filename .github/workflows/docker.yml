@@ -41,6 +41,7 @@ jobs:
   docker-build:
     name: Build Docker Image (No Push)
     runs-on: ubuntu-latest
+    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
     needs: compile
     steps:
       - name: Check out code
@@ -63,7 +64,7 @@ jobs:
   docker-push:
     name: Push Docker Image
     runs-on: ubuntu-latest
-    needs: [compile, docker-build]
+    needs: compile
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Check out code
