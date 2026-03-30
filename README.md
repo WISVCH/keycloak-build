@@ -120,6 +120,7 @@ SURFconext (or another OIDC IdP):
 - Use `oidc` provider with your own OIDC endpoints and issuer.
 - Keep signature validation enabled (`validateSignature=true`, `useJwksUrl=true`).
 - Use `clientAuthMethod=client_secret_post` unless your provider requires a different method.
+- In the SURF SP Dashboard, set **Subject type** to **Persistent** (not **Transient**). Returning-user linking depends on stable user identifiers; with transient IDs, returning users cannot be linked reliably.
 - Add mapper `oidc-username-idp-mapper`:
   - template `${ALIAS}.${CLAIM.uids}`
   - target `LOCAL`
