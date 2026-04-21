@@ -23,7 +23,7 @@
         <java.version>21</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
-        <keycloak.version>26.5.6</keycloak.version>
+        <keycloak.version>26.6.1</keycloak.version>
         <jackson.version>2.21.2</jackson.version>
         <jboss.logging.version>3.6.3.Final</jboss.logging.version>
         <maven.compiler.plugin.version>3.15.0</maven.compiler.plugin.version>
