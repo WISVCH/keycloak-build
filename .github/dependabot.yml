@@ -4,6 +4,12 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      keycloak:
+        patterns:
+          - "keycloak.version"
+          - "org.keycloak:*"
+          - "org.keycloak.bom:*"
     labels:
       - "dependencies"
       - "java"
