@@ -121,7 +121,8 @@
           "baseUrl": ["${DIENST2_BASE_URL}"],
           "apiEndpoint": ["/ldb/api/v3"],
           "apiKey": ["${DIENST2_API_KEY}"],
-          "cachePolicy": ["DEFAULT"],
+          "cachePolicy": ["MAX_LIFESPAN"],
+          "maxLifespan": ["60000"],
           "enabled": ["true"]
         }
       }
