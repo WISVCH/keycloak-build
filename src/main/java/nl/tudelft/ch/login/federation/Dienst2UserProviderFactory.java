@@ -1,5 +1,8 @@
 package nl.tudelft.ch.login.federation;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import nl.tudelft.ch.login.dienst2.model.Person;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
@@ -9,15 +12,27 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.storage.UserStorageProviderFactory;
 import org.keycloak.utils.StringUtil;
 
+import java.time.Duration;
 import java.util.List;
 
 public class Dienst2UserProviderFactory implements UserStorageProviderFactory<Dienst2UserProvider> {
 
     public static final String PROVIDER_ID = "Dienst2";
+    private static final Duration DIENST2_CACHE_LIFESPAN = Duration.ofSeconds(60);
+    private static final int PERSON_CACHE_MAXIMUM_SIZE = 10_000;
+    private static final int GROUP_CACHE_MAXIMUM_SIZE = 10_000;
     static final String BASE_URL = "baseUrl";
     static final String API_KEY = "apiKey";
     static final String API_ENDPOINT = "apiEndpoint";
     private final List<ProviderConfigProperty> configMetadata;
+    private final Cache<String, Person> personCache = Caffeine.newBuilder()
+            .maximumSize(PERSON_CACHE_MAXIMUM_SIZE)
+            .expireAfterWrite(DIENST2_CACHE_LIFESPAN)
+            .build();
+    private final Cache<String, List<String>> groupCache = Caffeine.newBuilder()
+            .maximumSize(GROUP_CACHE_MAXIMUM_SIZE)
+            .expireAfterWrite(DIENST2_CACHE_LIFESPAN)
+            .build();
 
     public Dienst2UserProviderFactory() {
         configMetadata = ProviderConfigurationBuilder.create()
@@ -53,7 +68,7 @@ public class Dienst2UserProviderFactory implements UserStorageProviderFactory<Di
 
     @Override
     public Dienst2UserProvider create(KeycloakSession keycloakSession, ComponentModel componentModel) {
-        return new Dienst2UserProvider(keycloakSession, componentModel);
+        return new Dienst2UserProvider(keycloakSession, componentModel, personCache, groupCache);
     }
 
     @Override

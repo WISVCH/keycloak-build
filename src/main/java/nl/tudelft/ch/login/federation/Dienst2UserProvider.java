@@ -1,5 +1,6 @@
 package nl.tudelft.ch.login.federation;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import nl.tudelft.ch.login.dienst2.Dienst2UserAdapter;
 import nl.tudelft.ch.login.dienst2.client.PeopleApiClient;
 import nl.tudelft.ch.login.dienst2.model.Person;
@@ -22,16 +23,23 @@ import java.util.stream.Collectors;
 public class Dienst2UserProvider implements UserStorageProvider, UserLookupProvider {
     private static final Logger LOGGER = Logger.getLogger(Dienst2UserProvider.class);
 
-    private static final String PERSON_CACHE_KEY = Dienst2UserProvider.class.getName() + ".person-cache";
-    private static final String GROUP_CACHE_KEY = Dienst2UserProvider.class.getName() + ".group-cache";
-
     private final KeycloakSession session;
     private final ComponentModel model;
     private final PeopleApiClient peopleApiClient;
+    private final Cache<String, Person> personCache;
+    private final Cache<String, List<String>> groupCache;
+    private final String cacheNamespace;
 
-    public Dienst2UserProvider(KeycloakSession session, ComponentModel model) {
+    public Dienst2UserProvider(
+            KeycloakSession session,
+            ComponentModel model,
+            Cache<String, Person> personCache,
+            Cache<String, List<String>> groupCache) {
         this.session = session;
         this.model = model;
+        this.personCache = personCache;
+        this.groupCache = groupCache;
+        this.cacheNamespace = model.getId() + ':';
 
         final String baseUrl = model.get(Dienst2UserProviderFactory.BASE_URL);
         final String apiKey = model.get(Dienst2UserProviderFactory.API_KEY);
@@ -84,11 +92,11 @@ public class Dienst2UserProvider implements UserStorageProvider, UserLookupProvi
             Optional<Person> person;
             if (username.startsWith("surfconext.")) {
                 String netid = username.substring("surfconext.".length());
-                person = peopleApiClient.findByNetId(netid);
+                person = findPersonByNetId(netid);
                 LOGGER.tracef("Resolved via netid=%s present=%s", netid, person.isPresent());
             } else if (username.startsWith("google.")) {
                 String googleUsername = username.substring("google.".length());
-                person = peopleApiClient.findByGoogleUsername(googleUsername);
+                person = findPersonByGoogleUsername(googleUsername);
                 LOGGER.tracef("Resolved via google_username=%s present=%s", googleUsername, person.isPresent());
             } else if (username.startsWith("wisvch.") || username.startsWith("WISVCH.")) {
                 String idPart = username.substring("wisvch.".length());
@@ -138,10 +146,10 @@ public class Dienst2UserProvider implements UserStorageProvider, UserLookupProvi
         }
 
         try {
-            List<GroupModel> cached = getGroupCache().get(groupCacheKey(realm, person.getId()));
-            if (cached != null) {
+            List<String> cachedGroupNames = groupCache.getIfPresent(groupCacheKey(person.getId()));
+            if (cachedGroupNames != null) {
                 LOGGER.tracef("Using cached google groups for person %s", person.getId());
-                return cached;
+                return resolveGroups(realm, cachedGroupNames);
             }
 
             List<String> groupNames = peopleApiClient.getGoogleGroups(person.getId());
@@ -150,30 +158,17 @@ public class Dienst2UserProvider implements UserStorageProvider, UserLookupProvi
                 return Collections.emptyList();
             }
 
-            Map<String, GroupModel> existing = realm.getGroupsStream()
-                    .collect(Collectors.toMap(GroupModel::getName, Function.identity(), (a, b) -> a));
-
-            List<GroupModel> resolved = new ArrayList<>();
-            for (String name : groupNames) {
-                if (name == null || name.isBlank()) {
-                    continue;
-                }
-                GroupModel group = existing.get(name);
-                if (group == null) {
-                    group = realm.createGroup(name);
-                    existing.put(name, group);
-                    LOGGER.debugf("Created Keycloak group '%s' from Dienst2 google groups", name);
-                }
-                if (!resolved.contains(group)) {
-                    resolved.add(group);
-                }
-            }
-
             LOGGER.tracef("Google groups for person %s -> %s", person.getId(), groupNames);
-
-            List<GroupModel> immutable = Collections.unmodifiableList(resolved);
-            getGroupCache().put(groupCacheKey(realm, person.getId()), immutable);
-            return immutable;
+            List<String> immutableGroupNames = groupNames.stream()
+                    .filter(Objects::nonNull)
+                    .filter(name -> !name.isBlank())
+                    .distinct()
+                    .toList();
+            if (immutableGroupNames.isEmpty()) {
+                return Collections.emptyList();
+            }
+            groupCache.put(groupCacheKey(person.getId()), immutableGroupNames);
+            return resolveGroups(realm, immutableGroupNames);
         } catch (IOException e) {
             LOGGER.errorf(e, "Failed to fetch google groups for Dienst2 person %s", person.getId());
             return Collections.emptyList();
@@ -181,40 +176,86 @@ public class Dienst2UserProvider implements UserStorageProvider, UserLookupProvi
     }
 
     private Person fetchPerson(Integer id) throws IOException {
-        Map<Integer, Person> cache = getPersonCache();
-        Person cached = cache.get(id);
+        Person cached = personCache.getIfPresent(personIdCacheKey(id));
         if (cached != null) {
             LOGGER.tracef("Using cached person %s", id);
             return cached;
         }
         Person person = peopleApiClient.getPersonById(id).orElse(null);
         if (person != null) {
-            cache.put(id, person);
+            cachePerson(person);
         }
         return person;
     }
 
-    @SuppressWarnings("unchecked")
-    private Map<Integer, Person> getPersonCache() {
-        Map<Integer, Person> cache = (Map<Integer, Person>) session.getAttribute(PERSON_CACHE_KEY);
-        if (cache == null) {
-            cache = new HashMap<>();
-            session.setAttribute(PERSON_CACHE_KEY, cache);
+    private Optional<Person> findPersonByNetId(String netId) throws IOException {
+        Person cached = personCache.getIfPresent(netIdCacheKey(netId));
+        if (cached != null) {
+            LOGGER.tracef("Using cached person for netid=%s", netId);
+            return Optional.of(cached);
         }
-        return cache;
+        Optional<Person> person = peopleApiClient.findByNetId(netId);
+        person.ifPresent(this::cachePerson);
+        return person;
     }
 
-    @SuppressWarnings("unchecked")
-    private Map<String, List<GroupModel>> getGroupCache() {
-        Map<String, List<GroupModel>> cache = (Map<String, List<GroupModel>>) session.getAttribute(GROUP_CACHE_KEY);
-        if (cache == null) {
-            cache = new HashMap<>();
-            session.setAttribute(GROUP_CACHE_KEY, cache);
+    private Optional<Person> findPersonByGoogleUsername(String googleUsername) throws IOException {
+        Person cached = personCache.getIfPresent(googleUsernameCacheKey(googleUsername));
+        if (cached != null) {
+            LOGGER.tracef("Using cached person for google_username=%s", googleUsername);
+            return Optional.of(cached);
         }
-        return cache;
+        Optional<Person> person = peopleApiClient.findByGoogleUsername(googleUsername);
+        person.ifPresent(this::cachePerson);
+        return person;
     }
 
-    private String groupCacheKey(RealmModel realm, Integer personId) {
-        return realm.getId() + ':' + personId;
+    private void cachePerson(Person person) {
+        if (person.getId() != null) {
+            personCache.put(personIdCacheKey(person.getId()), person);
+        }
+        if (person.getNetid() != null && !person.getNetid().isBlank()) {
+            personCache.put(netIdCacheKey(person.getNetid()), person);
+        }
+        if (person.getGoogleUsername() != null && !person.getGoogleUsername().isBlank()) {
+            personCache.put(googleUsernameCacheKey(person.getGoogleUsername()), person);
+        }
+    }
+
+    private List<GroupModel> resolveGroups(RealmModel realm, List<String> groupNames) {
+        Map<String, GroupModel> existing = realm.getGroupsStream()
+                .collect(Collectors.toMap(GroupModel::getName, Function.identity(), (a, b) -> a));
+        List<GroupModel> resolved = new ArrayList<>();
+        for (String name : groupNames) {
+            if (name == null || name.isBlank()) {
+                continue;
+            }
+            GroupModel group = existing.get(name);
+            if (group == null) {
+                group = realm.createGroup(name);
+                existing.put(name, group);
+                LOGGER.debugf("Created Keycloak group '%s' from Dienst2 google groups", name);
+            }
+            if (!resolved.contains(group)) {
+                resolved.add(group);
+            }
+        }
+        return Collections.unmodifiableList(resolved);
+    }
+
+    private String personIdCacheKey(Integer personId) {
+        return cacheNamespace + "person:id:" + personId;
+    }
+
+    private String netIdCacheKey(String netId) {
+        return cacheNamespace + "person:netid:" + netId;
+    }
+
+    private String googleUsernameCacheKey(String googleUsername) {
+        return cacheNamespace + "person:google-username:" + googleUsername;
+    }
+
+    private String groupCacheKey(Integer personId) {
+        return cacheNamespace + "groups:" + personId;
     }
 }
