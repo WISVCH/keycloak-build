@@ -23,7 +23,7 @@ This means users are not managed as local Keycloak users. Dienst2 is the source 
 Run from the `keycloak-build` repository root:
 
 ```bash
-mvn package
+mvn clean package
 KEYCLOAK_VERSION="$(mvn -q -DforceStdout help:evaluate -Dexpression=keycloak.version)"
 docker build --build-arg KEYCLOAK_VERSION=${KEYCLOAK_VERSION} -t keycloak-wisvch .
 ```
@@ -159,7 +159,12 @@ Add a User Federation provider:
 - `enabled=true`
 
 Recommended cache policy:
-- `EVICT_DAILY` at `00:00`
+- `MAX_LIFESPAN` with a lifespan of `60000` milliseconds (60 seconds).
+
+The provider additionally keeps successful Dienst2 person and Google-group
+lookups in a process-local cache for 60 seconds. This absorbs repeated broker
+lookups that intentionally bypass Keycloak's user cache. Failed and not-found
+lookups are not cached.
 
 Behavior that drives the rest of the setup:
 - `surfconext.<netid>` is resolved via Dienst2 `netid`
