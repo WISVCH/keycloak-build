@@ -49,3 +49,7 @@ target
 # Maven shade
 #############
 *dependency-reduced-pom.xml
+
+# Local development configuration and exports may contain credentials.
+.env
+realm-export*.json

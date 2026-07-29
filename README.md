@@ -35,6 +35,73 @@ The image copies:
 - `target/keycloak-wisvch-custom-providers.jar` to `/opt/keycloak/providers/`
 - `themes/chtheme` to `/opt/keycloak/themes`
 
+## Local development
+
+The repository includes a Docker Compose development stack with PostgreSQL. It
+mounts the theme and the locally built provider JAR, so it is separate from the
+production image build above.
+
+### First start
+
+```bash
+cp .env.example .env
+# Set the local/test credentials in .env.
+./scripts/dev-up.sh
+```
+
+`.env` is the single runtime configuration source; The values are used as follows:
+
+- `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD` create the
+  local admin-console account. Choose these yourself.
+- `KC_DB_PASSWORD` protects the local PostgreSQL database. Choose this yourself.
+- `DIENST2_BASE_URL` and `DIENST2_API_KEY` configure the Dienst2 federation
+  provider. It is best to set up a local Dienst2 instance, following the
+  instructions in the [Dienst2 repository](https://github.com/wisvch/dienst2).
+  Use that instance's URL and API key here. If a local instance is not possible,
+  ask in the Beheer chat for a development endpoint and API key that you may use;
+  do not reuse a production key.
+- `SURFCONEXT_CLIENT_ID` and `SURFCONEXT_CLIENT_SECRET` enable `NetID test`.
+  Ask in the Beheer chat for an existing development credential first. If you
+  need to create one, sign in to [SURFconext SP
+  Dashboard](https://sp.surfconext.nl/) with eduID and the Beheer email account,
+  select the test environment, and create a client secret there. Put its client
+  ID and secret in `.env`. `NetID test` is not the real NetID login: it uses
+  fake NetIDs. Ask in the Beheer chat for the test usernames and passwords.
+- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` enable Google login. Ask in the
+  Beheer chat for an existing development credential first. Otherwise, in Google
+  Cloud Console, open [APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials),
+  and create an **OAuth client ID** for a **Web application**. Complete the
+  required consent-screen details, then copy the generated client ID and client
+  secret into `.env`.
+
+Keycloak is available at [http://localhost:8181](http://localhost:8181). The
+admin credentials are `KC_BOOTSTRAP_ADMIN_USERNAME` and
+`KC_BOOTSTRAP_ADMIN_PASSWORD` from `.env`.
+
+After signing in, use the realm selector in the upper-left corner to switch from
+the `master` realm to `ch-dev`. Configure or inspect the development identity
+providers, federation provider, theme, and login flow in `ch-dev`, not `master`.
+
+The initial realm is `ch-dev`, defined in `realm/ch-dev-realm.json`. It includes
+the CH login theme, production-compatible Google and SURFconext mapping/login
+behaviour, and the SURFconext test endpoints (shown as `NetID test`). It also
+includes the automatic broker-linking flow, the CH user-profile attributes, and
+the Dienst2 user-federation component. Its client secrets and Dienst2 API key
+are placeholders resolved from `.env` at import time.
+
+Test the login flow at
+[http://localhost:8181/realms/ch-dev/account/](http://localhost:8181/realms/ch-dev/account/).
+
+### Development
+
+- Theme changes are mounted directly; refresh the browser to see them. Theme
+  and template caching is disabled for the local container.
+- After changing Java/provider code, run `./scripts/dev-rebuild.sh`.
+- Stop the stack with `./scripts/dev-down.sh`.
+- After changing the realm JSON, run `./scripts/dev-reset.sh`. It explicitly
+  deletes the local database volume and re-imports the realm; startup imports
+  never overwrite an existing realm.
+
 ## Keycloak setup
 
 Use your own URLs, client IDs, secrets, and API tokens.  

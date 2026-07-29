@@ -1,0 +1,139 @@
+{
+  "realm": "ch-dev",
+  "displayName": "CH development",
+  "enabled": true,
+  "loginTheme": "chtheme",
+  "loginWithEmailAllowed": false,
+  "duplicateEmailsAllowed": true,
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "rememberMe": false,
+  "verifyEmail": false,
+  "sslRequired": "external",
+  "browserFlow": "browser",
+  "directGrantFlow": "direct grant",
+  "registrationFlow": "registration",
+  "resetCredentialsFlow": "reset credentials",
+  "firstBrokerLoginFlow": "first broker login",
+  "eventsEnabled": false,
+  "eventsListeners": ["jboss-logging"],
+  "requiredActions": [
+    {"alias": "TERMS_AND_CONDITIONS", "name": "Terms and Conditions", "providerId": "TERMS_AND_CONDITIONS", "enabled": false, "defaultAction": false, "priority": 20, "config": {}},
+    {"alias": "UPDATE_PROFILE", "name": "Update Profile", "providerId": "UPDATE_PROFILE", "enabled": false, "defaultAction": false, "priority": 40, "config": {}},
+    {"alias": "VERIFY_EMAIL", "name": "Verify Email", "providerId": "VERIFY_EMAIL", "enabled": false, "defaultAction": false, "priority": 50, "config": {}},
+    {"alias": "CONFIGURE_TOTP", "name": "Configure OTP", "providerId": "CONFIGURE_TOTP", "enabled": false, "defaultAction": false, "priority": 54, "config": {}},
+    {"alias": "UPDATE_PASSWORD", "name": "Update Password", "providerId": "UPDATE_PASSWORD", "enabled": false, "defaultAction": false, "priority": 57, "config": {}},
+    {"alias": "delete_account", "name": "Delete Account", "providerId": "delete_account", "enabled": false, "defaultAction": false, "priority": 60, "config": {}},
+    {"alias": "VERIFY_PROFILE", "name": "Verify Profile", "providerId": "VERIFY_PROFILE", "enabled": false, "defaultAction": false, "priority": 90, "config": {}},
+    {"alias": "CONFIGURE_RECOVERY_AUTHN_CODES", "name": "Recovery Authentication Codes", "providerId": "CONFIGURE_RECOVERY_AUTHN_CODES", "enabled": false, "defaultAction": false, "priority": 120, "config": {}}
+  ],
+  "authenticationFlows": [
+    {
+      "alias": "link exisiting without confimation",
+      "description": "Automatically link the broker identity to the federated Dienst2 user.",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {"authenticator": "idp-detect-existing-broker-user", "authenticatorFlow": false, "requirement": "REQUIRED", "priority": 0, "userSetupAllowed": false},
+        {"authenticator": "idp-auto-link", "authenticatorFlow": false, "requirement": "REQUIRED", "priority": 1, "userSetupAllowed": false}
+      ]
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "google",
+      "providerId": "google",
+      "enabled": true,
+      "trustEmail": false,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "authenticateByDefault": false,
+      "linkOnly": false,
+      "firstBrokerLoginFlowAlias": "link exisiting without confimation",
+      "config": {
+        "clientId": "${GOOGLE_CLIENT_ID}",
+        "clientSecret": "${GOOGLE_CLIENT_SECRET}",
+        "acceptsPromptNoneForwardFromClient": "false",
+        "disableUserInfo": "false",
+        "hostedDomain": "ch.tudelft.nl",
+        "syncMode": "FORCE",
+        "filteredByClaim": "false",
+        "caseSensitiveOriginalUsername": "false",
+        "guiOrder": "1"
+      }
+    },
+    {
+      "alias": "surfconext",
+      "displayName": "NetID test",
+      "providerId": "oidc",
+      "enabled": true,
+      "trustEmail": false,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "authenticateByDefault": false,
+      "linkOnly": false,
+      "firstBrokerLoginFlowAlias": "link exisiting without confimation",
+      "config": {
+        "clientId": "${SURFCONEXT_CLIENT_ID}",
+        "clientSecret": "${SURFCONEXT_CLIENT_SECRET}",
+        "tokenUrl": "https://connect.test.surfconext.nl/oidc/token",
+        "jwksUrl": "https://connect.test.surfconext.nl/oidc/certs",
+        "issuer": "https://connect.test.surfconext.nl",
+        "clientAuthMethod": "client_secret_post",
+        "syncMode": "FORCE",
+        "defaultScope": "openid profile email",
+        "userInfoUrl": "https://connect.test.surfconext.nl/oidc/userinfo",
+        "validateSignature": "true",
+        "useJwksUrl": "true",
+        "metadataDescriptorUrl": "https://connect.test.surfconext.nl/.well-known/openid-configuration",
+        "authorizationUrl": "https://connect.test.surfconext.nl/oidc/authorize",
+        "disableUserInfo": "false",
+        "sendIdTokenOnLogout": "true",
+        "acceptsPromptNoneForwardFromClient": "false",
+        "isAccessTokenJWT": "false",
+        "filteredByClaim": "false",
+        "backchannelSupported": "false",
+        "caseSensitiveOriginalUsername": "false",
+        "loginHint": "false",
+        "requiresShortStateParameter": "false",
+        "allowedClockSkew": "0",
+        "guiOrder": "0",
+        "uiLocales": "false",
+        "disableNonce": "false",
+        "sendClientIdOnLogout": "false",
+        "pkceEnabled": "false",
+        "passMaxAge": "false",
+        "disableTypeClaimCheck": "false"
+      }
+    }
+  ],
+  "identityProviderMappers": [
+    {"name": "import username", "identityProviderAlias": "google", "identityProviderMapper": "oidc-username-idp-mapper", "config": {"syncMode": "IMPORT", "template": "${ALIAS}.${CLAIM.email | localpart}", "target": "LOCAL"}},
+    {"name": "set netid as username", "identityProviderAlias": "surfconext", "identityProviderMapper": "oidc-username-idp-mapper", "config": {"syncMode": "FORCE", "template": "${ALIAS}.${CLAIM.uids}", "target": "LOCAL"}}
+  ],
+  "components": {
+    "org.keycloak.storage.UserStorageProvider": [
+      {
+        "name": "Dienst2 local",
+        "providerId": "Dienst2",
+        "config": {
+          "baseUrl": ["${DIENST2_BASE_URL}"],
+          "apiEndpoint": ["/ldb/api/v3"],
+          "apiKey": ["${DIENST2_API_KEY}"],
+          "cachePolicy": ["DEFAULT"],
+          "enabled": ["true"]
+        }
+      }
+    ],
+    "org.keycloak.userprofile.UserProfileProvider": [
+      {
+        "providerId": "declarative-user-profile",
+        "config": {
+          "kc.user.profile.config": ["{\"attributes\":[{\"name\":\"username\",\"displayName\":\"${username}\",\"validations\":{\"length\":{\"min\":3,\"max\":255},\"username-prohibited-characters\":{},\"up-username-not-idn-homograph\":{}},\"annotations\":{},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[]},\"multivalued\":false},{\"name\":\"email\",\"displayName\":\"${email}\",\"validations\":{\"email\":{},\"length\":{\"max\":255}},\"annotations\":{},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[]},\"multivalued\":false},{\"name\":\"firstName\",\"displayName\":\"${firstName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"annotations\":{},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[]},\"multivalued\":false},{\"name\":\"lastName\",\"displayName\":\"${lastName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"annotations\":{},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[]},\"multivalued\":false},{\"name\":\"google_username\",\"displayName\":\"Google Username\",\"validations\":{},\"annotations\":{},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[]},\"multivalued\":false},{\"name\":\"netid\",\"displayName\":\"NetID\",\"validations\":{},\"annotations\":{},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[]},\"multivalued\":false},{\"name\":\"membership_status\",\"displayName\":\"Membership Status\",\"validations\":{},\"annotations\":{},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\"],\"edit\":[]},\"multivalued\":false},{\"name\":\"formatted_name\",\"displayName\":\"Formatted Name\",\"validations\":{},\"annotations\":{},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[]},\"multivalued\":false}],\"groups\":[{\"name\":\"user-metadata\",\"displayHeader\":\"User metadata\",\"displayDescription\":\"Attributes, which refer to user metadata\"}]}"
+          ]
+        }
+      }
+    ]
+  }
+}
