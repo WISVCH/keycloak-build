@@ -1,8 +1,6 @@
 package nl.tudelft.ch.login.federation;
 
-import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import nl.tudelft.ch.login.dienst2.model.Person;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
@@ -15,24 +13,25 @@ import org.keycloak.utils.StringUtil;
 import java.time.Duration;
 import java.util.List;
 
+/** Creates Dienst2 user-storage providers and their shared caches. */
 public class Dienst2UserProviderFactory implements UserStorageProviderFactory<Dienst2UserProvider> {
 
     public static final String PROVIDER_ID = "Dienst2";
-    private static final Duration DIENST2_CACHE_LIFESPAN = Duration.ofSeconds(60);
-    private static final int PERSON_CACHE_MAXIMUM_SIZE = 10_000;
-    private static final int GROUP_CACHE_MAXIMUM_SIZE = 10_000;
     static final String BASE_URL = "baseUrl";
     static final String API_KEY = "apiKey";
     static final String API_ENDPOINT = "apiEndpoint";
+    private static final Duration DIENST2_CACHE_LIFESPAN = Duration.ofSeconds(60);
+    private static final int PERSON_CACHE_MAXIMUM_SIZE = 10_000;
+    private static final int GROUP_CACHE_MAXIMUM_SIZE = 10_000;
     private final List<ProviderConfigProperty> configMetadata;
-    private final Cache<String, Person> personCache = Caffeine.newBuilder()
+    private final CachedDienst2Lookup lookup = new CachedDienst2Lookup(Caffeine.newBuilder()
             .maximumSize(PERSON_CACHE_MAXIMUM_SIZE)
             .expireAfterWrite(DIENST2_CACHE_LIFESPAN)
-            .build();
-    private final Cache<String, List<String>> groupCache = Caffeine.newBuilder()
+            .build(), Caffeine.newBuilder()
             .maximumSize(GROUP_CACHE_MAXIMUM_SIZE)
             .expireAfterWrite(DIENST2_CACHE_LIFESPAN)
-            .build();
+            .build());
+    private final KeycloakGroupResolver groupResolver = new KeycloakGroupResolver();
 
     public Dienst2UserProviderFactory() {
         configMetadata = ProviderConfigurationBuilder.create()
@@ -68,7 +67,7 @@ public class Dienst2UserProviderFactory implements UserStorageProviderFactory<Di
 
     @Override
     public Dienst2UserProvider create(KeycloakSession keycloakSession, ComponentModel componentModel) {
-        return new Dienst2UserProvider(keycloakSession, componentModel, personCache, groupCache);
+        return new Dienst2UserProvider(keycloakSession, componentModel, lookup, groupResolver);
     }
 
     @Override
