@@ -8,7 +8,7 @@ if [[ ! -f .env ]]; then
   exit 1
 fi
 
-mvn package
+mvn clean package
 docker compose up --detach
 
 echo "Keycloak is starting at http://localhost:8181"

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-mvn package
-docker compose restart keycloak
+mvn clean package
+docker compose up --detach --force-recreate keycloak
 
-echo "Provider rebuilt and Keycloak restarted."
+echo "Provider rebuilt and Keycloak recreated."
