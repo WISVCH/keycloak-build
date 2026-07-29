@@ -49,7 +49,6 @@ public class Dienst2UserProvider implements UserStorageProvider, UserLookupProvi
         String endpoint = model.get(Dienst2UserProviderFactory.API_ENDPOINT);
         HttpClientProvider httpClientProvider = session.getProvider(HttpClientProvider.class);
         this.peopleApiClient = new PeopleApiClient(httpClientProvider.getHttpClient(), baseUrl, endpoint, apiKey);
-        LOGGER.debugf("Initialized Dienst2UserProvider baseUrl=%s endpoint=%s", baseUrl, endpoint);
     }
 
     @Override
@@ -72,10 +71,10 @@ public class Dienst2UserProvider implements UserStorageProvider, UserLookupProvi
                     .map(person -> toUserModel(realm, person))
                     .orElse(null);
         } catch (NumberFormatException exception) {
-            LOGGER.warnf("Invalid Dienst2 person id '%s'", externalId);
+            LOGGER.warnf("Invalid Dienst2 storage ID externalId=%s", externalId);
             return null;
         } catch (IOException exception) {
-            LOGGER.errorf(exception, "Failed to fetch Dienst2 person by id %s", externalId);
+            LOGGER.errorf(exception, "Dienst2 person lookup failed id=%s", externalId);
             return null;
         }
     }
@@ -94,7 +93,7 @@ public class Dienst2UserProvider implements UserStorageProvider, UserLookupProvi
                     .map(person -> toUserModel(realm, person))
                     .orElse(null);
         } catch (IOException exception) {
-            LOGGER.errorf(exception, "Failed to fetch Dienst2 person for username %s", username);
+            LOGGER.errorf(exception, "Dienst2 person lookup failed username=%s", username);
             return null;
         }
     }
@@ -119,12 +118,12 @@ public class Dienst2UserProvider implements UserStorageProvider, UserLookupProvi
                 Integer personId = Integer.valueOf(username.substring(WISVCH_PREFIX.length()));
                 return lookup.findPersonById(componentId, personId, peopleApiClient);
             } catch (NumberFormatException exception) {
-                LOGGER.warnf("WISVCH username contains invalid id '%s'", username);
+                LOGGER.warnf("Invalid WISVCH username=%s", username);
                 return Optional.empty();
             }
         }
 
-        LOGGER.debugf("Ignoring unsupported Dienst2 username prefix: %s", username);
+        LOGGER.tracef("Ignoring unsupported Dienst2 username=%s", username);
         return Optional.empty();
     }
 
@@ -133,13 +132,14 @@ public class Dienst2UserProvider implements UserStorageProvider, UserLookupProvi
             List<String> groupNames = getGoogleGroups(person);
             return new Dienst2UserAdapter(session, realm, model, person, groupResolver.resolve(realm, groupNames));
         } catch (IOException exception) {
-            LOGGER.errorf(exception, "Failed to fetch Google groups for Dienst2 person %s", person.getId());
+            LOGGER.errorf(exception, "Dienst2 Google group lookup failed personId=%s", person.getId());
             return new Dienst2UserAdapter(session, realm, model, person, List.of());
         }
     }
 
     private List<String> getGoogleGroups(Person person) throws IOException {
         if (person.getId() == null) {
+            LOGGER.warn("Dienst2 person has no ID; skipping Google groups");
             return List.of();
         }
         if (person.getGoogleUsername() == null || person.getGoogleUsername().isBlank()) {

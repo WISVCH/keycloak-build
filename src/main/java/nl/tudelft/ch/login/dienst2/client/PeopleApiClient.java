@@ -20,7 +20,6 @@ import org.jboss.logging.Logger;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class PeopleApiClient {
@@ -92,20 +91,21 @@ public class PeopleApiClient {
         HttpGet request = new HttpGet(personUri);
         addDienst2AuthorizationHeader(request);
 
+        traceRequest("GET", personUri);
         try (CloseableHttpResponse response = httpClient.execute(request)) {
-            traceRequest("GET", personUri, null);
             int statusCode = response.getStatusLine().getStatusCode();
+            traceResponse(personUri, statusCode);
             if (statusCode == 404) {
-                LOGGER.debugf("People API returned 404 for id %d", id);
+                LOGGER.tracef("Dienst2 person not found id=%d", id);
                 EntityUtils.consumeQuietly(response.getEntity());
                 return Optional.empty();
             }
             if (statusCode < 200 || statusCode >= 300) {
-                String body = readBodyQuietly(response);
-                throw new IOException("Unexpected response " + statusCode + " from " + personUri + ": " + body);
+                throw unexpectedResponse(statusCode, personUri);
             }
 
             if (response.getEntity() == null) {
+                LOGGER.warnf("Dienst2 returned an empty person response id=%d", id);
                 return Optional.empty();
             }
 
@@ -137,21 +137,22 @@ public class PeopleApiClient {
         URI uri = apiRoot.resolve("people/" + personId + "/google_groups/");
         HttpGet request = new HttpGet(uri);
         addDienst2AuthorizationHeader(request);
-        traceRequest("GET", uri, null);
 
+        traceRequest("GET", uri);
         try (CloseableHttpResponse response = httpClient.execute(request)) {
             int statusCode = response.getStatusLine().getStatusCode();
+            traceResponse(uri, statusCode);
             if (statusCode == 404) {
-                LOGGER.debugf("People API returned 404 for google_groups of id %d", personId);
+                LOGGER.tracef("Dienst2 Google groups not found personId=%d", personId);
                 EntityUtils.consumeQuietly(response.getEntity());
                 return Collections.emptyList();
             }
             if (statusCode < 200 || statusCode >= 300) {
-                String body = readBodyQuietly(response);
-                throw new IOException("Unexpected response " + statusCode + " from " + uri + ": " + body);
+                throw unexpectedResponse(statusCode, uri);
             }
 
             if (response.getEntity() == null) {
+                LOGGER.warnf("Dienst2 returned an empty Google groups response personId=%d", personId);
                 return Collections.emptyList();
             }
 
@@ -159,10 +160,9 @@ public class PeopleApiClient {
                 List<String> groups = objectMapper.readValue(content, new TypeReference<List<String>>() {
                 });
                 if (groups == null || groups.isEmpty()) {
-                    LOGGER.debugf("People API returned zero google groups for id %d", personId);
                     return Collections.emptyList();
                 }
-                LOGGER.tracef("Dienst2 google groups for %d -> %s", personId, groups);
+                LOGGER.tracef("Dienst2 returned Google groups personId=%s count=%s", personId.toString(), Integer.toString(groups.size()));
                 return Collections.unmodifiableList(groups);
             }
         }
@@ -174,15 +174,14 @@ public class PeopleApiClient {
         }
 
         URI listUri = buildPeopleSearchUri(filterName, filterValue, SINGLE_RESULT_LIMIT, null);
-        traceRequest("GET", listUri, Map.of(filterName, filterValue));
         PeopleResponse response = executePeopleRequest(listUri);
         if (response == null || response.getResults() == null || response.getResults().isEmpty()) {
-            LOGGER.debugf("People API returned no results for filter %s=%s", filterName, filterValue);
+            LOGGER.tracef("Dienst2 person not found filter=%s value=%s", filterName, filterValue);
             return Optional.empty();
         }
         List<Person> results = response.getResults();
         if (results.size() > 1) {
-            LOGGER.warnf("Multiple persons returned for filter %s=%s", filterName, filterValue);
+            LOGGER.warnf("Dienst2 returned multiple people filter=%s value=%s", filterName, filterValue);
             return Optional.empty();
         }
         Person single = results.getFirst();
@@ -207,40 +206,27 @@ public class PeopleApiClient {
         request.setHeader(HttpHeaders.AUTHORIZATION, "Token " + apiKey);
     }
 
-    private String readBodyQuietly(CloseableHttpResponse response) {
-        try {
-            if (response.getEntity() == null) {
-                return "";
-            }
-            return EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            LOGGER.debug("Failed to read response body", e);
-            return "";
-        }
-    }
-
     private PeopleResponse executePeopleRequest(URI uri) throws IOException {
         HttpGet request = new HttpGet(uri);
         addDienst2AuthorizationHeader(request);
 
+        traceRequest("GET", uri);
         try (CloseableHttpResponse response = httpClient.execute(request)) {
             int statusCode = response.getStatusLine().getStatusCode();
+            traceResponse(uri, statusCode);
             if (statusCode < 200 || statusCode >= 300) {
-                String body = readBodyQuietly(response);
-                throw new IOException("Unexpected response " + statusCode + " from " + uri + ": " + body);
+                throw unexpectedResponse(statusCode, uri);
             }
 
             if (response.getEntity() == null) {
-                LOGGER.debugf("People API returned empty entity for %s", uri);
+                LOGGER.warnf("Dienst2 returned an empty people response path=%s", uri.getPath());
                 return null;
             }
 
             try (InputStream content = response.getEntity().getContent()) {
                 PeopleResponse peopleResponse = objectMapper.readValue(content, PeopleResponse.class);
-                if (peopleResponse != null) {
-                    if (peopleResponse.getResults() == null || peopleResponse.getResults().isEmpty()) {
-                        LOGGER.debugf("People API returned zero people for %s", uri);
-                    } else if (LOGGER.isTraceEnabled()) {
+                if (peopleResponse != null && LOGGER.isTraceEnabled()) {
+                    if (peopleResponse.getResults() != null && !peopleResponse.getResults().isEmpty()) {
                         peopleResponse.getResults().stream()
                                 .filter(Objects::nonNull)
                                 .forEach(person -> tracePerson("list", person));
@@ -251,9 +237,19 @@ public class PeopleApiClient {
         }
     }
 
-    private void traceRequest(String method, URI uri, Map<String, String> filters) {
+    private IOException unexpectedResponse(int statusCode, URI uri) {
+        return new IOException("Unexpected Dienst2 response status=" + statusCode + " path=" + uri.getPath());
+    }
+
+    private void traceRequest(String method, URI uri) {
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.tracef("Dienst2 request %s %s filters=%s", method, uri, filters == null ? "{}" : filters);
+            LOGGER.tracef("Dienst2 request method=%s uri=%s", method, uri);
+        }
+    }
+
+    private void traceResponse(URI uri, int statusCode) {
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.tracef("Dienst2 response status=%d uri=%s", statusCode, uri);
         }
     }
 
@@ -261,8 +257,6 @@ public class PeopleApiClient {
         if (!LOGGER.isTraceEnabled() || person == null) {
             return;
         }
-        String first = person.getFirstname() == null ? "" : person.getFirstname();
-        String last = person.getSurname() == null ? "" : person.getSurname();
-        LOGGER.tracef("Dienst2 %s -> id=%s name=%s %s", context, person.getId(), first, last);
+        LOGGER.tracef("Dienst2 person response context=%s id=%s", context, person.getId());
     }
 }
