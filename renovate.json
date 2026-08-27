@@ -1,0 +1,22 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":automergeStableNonMajor",
+    ":configMigration",
+    ":rebaseStalePrs"
+  ],
+  "packageRules": [
+    {
+      "description": "Keep the Keycloak runtime and provider API aligned",
+      "matchManagers": ["maven", "dockerfile", "docker-compose"],
+      "matchPackageNames": [
+        "org.keycloak:*",
+        "org.keycloak.bom:*",
+        "quay.io/keycloak/keycloak"
+      ],
+      "groupName": "Keycloak",
+      "groupSlug": "keycloak"
+    }
+  ]
+}
