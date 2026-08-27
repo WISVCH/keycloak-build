@@ -4,9 +4,7 @@
     "config:recommended",
     ":automergeStableNonMajor",
     ":configMigration",
-    ":rebaseStalePrs",
-    ":prHourlyLimitNone",
-    ":prConcurrentLimitNone"
+    ":rebaseStalePrs"
   ],
   "packageRules": [
     {
