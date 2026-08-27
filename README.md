@@ -24,12 +24,12 @@ Run from the `keycloak-build` repository root:
 
 ```bash
 mvn clean package
-KEYCLOAK_VERSION="$(mvn -q -DforceStdout help:evaluate -Dexpression=keycloak.version)"
-docker build --build-arg KEYCLOAK_VERSION=${KEYCLOAK_VERSION} -t keycloak-wisvch .
+docker build -t keycloak-wisvch .
 ```
 
-`pom.xml` (`<keycloak.version>`) is the source of truth for the Keycloak runtime version.
-CI reads that value and passes it to Docker as `--build-arg KEYCLOAK_VERSION=...`, so provider dependencies and image base version stay in sync.
+The Keycloak version is declared in `pom.xml`, `Dockerfile`, and `compose.yaml`.
+Renovate updates these declarations together in one Keycloak pull request, so the provider API,
+production image, and local development image stay aligned.
 
 The image copies:
 - `target/keycloak-wisvch-custom-providers.jar` to `/opt/keycloak/providers/`
