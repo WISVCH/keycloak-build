@@ -1,4 +1,4 @@
-FROM quay.io/keycloak/keycloak:26.7.2 AS keycloak-base
+FROM quay.io/keycloak/keycloak:26.7.3 AS keycloak-base
 
 FROM keycloak-base AS builder
 ENV KC_HEALTH_ENABLED=true
