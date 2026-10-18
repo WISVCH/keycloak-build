@@ -1,0 +1,61 @@
+/* Keep the upstream stylesheet and override only CH branding. */
+:root {
+    --pf-v5-global--primary-color--100: #1e274a;
+    --keycloak-card-top-color: var(--pf-v5-global--primary-color--100);
+    --ch-background-overlay-opacity: 0.3;
+    --keycloak-logo-url: url('../img/logo.svg');
+    --keycloak-bg-logo-url: linear-gradient(
+        rgba(0, 0, 0, var(--ch-background-overlay-opacity)),
+        rgba(0, 0, 0, var(--ch-background-overlay-opacity))
+    ), url('../img/owl.webp');
+}
+
+.pf-v5-theme-dark {
+    --keycloak-card-top-color: #90b6cb;
+    --ch-background-overlay-opacity: 0.50;
+}
+
+/* Use CH navy for light-mode buttons and retain upstream dark-mode colors. */
+html:not(.pf-v5-theme-dark) #kc-social-providers {
+    --pf-v5-global--Color--100: var(--pf-v5-global--primary-color--100);
+    --pf-v5-global--BorderColor--100: var(--pf-v5-global--primary-color--100);
+    --pf-v5-global--BorderColor--200: var(--pf-v5-global--primary-color--100);
+}
+
+/* Present the provider choices on the main login page. This only hides the
+   password form; authentication policy remains controlled by the realm. */
+body[data-page-id="login-login"] #kc-form,
+body[data-page-id="login-login"] .kc-login-divider {
+    display: none;
+}
+
+/* Retain the upstream realm heading for screen readers and show the CH logo.
+   Match the SVG proportions at every width; upstream header padding supplies
+   the mobile inset. */
+#kc-header-wrapper {
+    font-size: 0;
+    background: var(--keycloak-logo-url) no-repeat center;
+    background-size: contain;
+    aspect-ratio: 1466 / 300;
+}
+
+/* Replace only the SURFconext icon; keep the upstream button and label. */
+#social-surfconext > img,
+#social-surfconext > picture {
+    display: none;
+}
+
+#social-surfconext::before {
+    content: "";
+    flex: 0 0 auto;
+    width: calc(2 * var(--pf-v5-global--FontSize--xl));
+    height: var(--pf-v5-global--FontSize--xl);
+    /* Keep the wordmark wide, but occupy one square icon slot in the layout. */
+    margin-inline-end: calc(-1 * var(--pf-v5-global--FontSize--xl));
+    background: url('../img/tudelft-light.svg') no-repeat center;
+    background-size: contain;
+}
+
+.pf-v5-theme-dark #social-surfconext::before {
+    background-image: url('../img/tudelft-dark.svg');
+}
